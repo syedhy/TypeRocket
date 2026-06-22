@@ -1,7 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getAtmosphereLayer } from "../config/atmosphere";
-import { MAX_ALTITUDE_KM, MIN_ELAPSED_SECONDS_FOR_WPM, TARGET_TEXT } from "../config/game";
+import { MAX_ALTITUDE_KM, MIN_ELAPSED_SECONDS_FOR_WPM } from "../config/game";
 import type { CharacterStatus, TypingMetrics } from "../types/game";
+import { useGameSettings } from "../contexts/GameSettingsContext";
+import { generateRandomWords } from "../config/words";
+import { soundPlayer } from "../utils/sounds";
 
 function countCorrectCharacters(input: string, targetText: string): number {
   return input.split("").reduce((count, character, index) => {
@@ -22,11 +25,15 @@ function clamp(value: number, min: number, max: number) {
 function getSpeedScoredAltitudeKilometers(correctProgress: number, accuracy: number, wpm: number) {
   const accuracyMultiplier = clamp(accuracy / 100, 0, 1);
 
-  return Math.round(wpm * 10 * correctProgress * accuracyMultiplier);
+  // Buffed altitude progression so an 80 WPM typist can reach near 15000 km
+  return Math.round((Math.pow(wpm, 2) * 1.8 + 25 * wpm) * correctProgress * Math.pow(accuracyMultiplier, 2));
 }
 
-export function useTypingGame(targetText = TARGET_TEXT) {
+export function useTypingGame() {
+  const { mode, textType, soundEnabled, difficulty } = useGameSettings();
+  const [targetText, setTargetText] = useState("");
   const [input, setInput] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
   const inputRef = useRef(input);
   const [startedAt, setStartedAt] = useState<number | null>(null);
   const [completedAt, setCompletedAt] = useState<number | null>(null);
@@ -34,7 +41,62 @@ export function useTypingGame(targetText = TARGET_TEXT) {
   const [historicalTypedCharacters, setHistoricalTypedCharacters] = useState(0);
   const [now, setNow] = useState(() => Date.now());
 
-  const isComplete = input.length === targetText.length;
+  const endTime = completedAt ?? now;
+  const elapsedSeconds = startedAt ? Math.max((endTime - startedAt) / 1000, 0) : 0;
+
+  useEffect(() => {
+    if (soundEnabled) soundPlayer.init();
+  }, [soundEnabled]);
+
+  const isComplete = useMemo(() => {
+    if (targetText.length === 0) return false;
+    if (mode.type === "words") {
+      return input.length === targetText.length;
+    } else {
+      return startedAt !== null && elapsedSeconds >= mode.value;
+    }
+  }, [mode, input.length, targetText.length, startedAt, elapsedSeconds]);
+
+  const reset = useCallback(async () => {
+    const resetTime = Date.now();
+    setIsLoading(true);
+    setInput("");
+    setStartedAt(null);
+    setCompletedAt(null);
+    setHistoricalMistakes(0);
+    setHistoricalTypedCharacters(0);
+    inputRef.current = "";
+    setNow(resetTime);
+
+    let text = "";
+    if (mode.type === "words") {
+      text = await generateRandomWords(mode.value, textType, difficulty);
+    } else {
+      text = await generateRandomWords(100, textType, difficulty); // Large buffer for time mode
+    }
+    
+    setTargetText(text);
+    setIsLoading(false);
+  }, [mode, textType, difficulty]);
+
+  // Initial load or mode change
+  useEffect(() => {
+    reset();
+  }, [reset]);
+
+  // Time mode buffer extension
+  useEffect(() => {
+    if (mode.type === "time" && targetText.length > 0 && input.length >= targetText.length - 30 && !isComplete) {
+      generateRandomWords(50, textType, difficulty).then(more => setTargetText((prev) => prev + " " + more));
+    }
+  }, [mode.type, input.length, targetText.length, isComplete, textType, difficulty]);
+
+  // Time mode completion check
+  useEffect(() => {
+    if (isComplete && !completedAt) {
+      setCompletedAt(Date.now());
+    }
+  }, [isComplete, completedAt]);
 
   useEffect(() => {
     inputRef.current = input;
@@ -51,8 +113,8 @@ export function useTypingGame(targetText = TARGET_TEXT) {
 
   const handleInputChange = useCallback(
     (nextValue: string) => {
+      if (isComplete || isLoading) return;
       const nextInput = nextValue.slice(0, targetText.length);
-      const isNextComplete = nextInput.length === targetText.length;
 
       if (!startedAt && nextInput.length > 0) {
         const startTime = Date.now();
@@ -60,33 +122,16 @@ export function useTypingGame(targetText = TARGET_TEXT) {
         setNow(startTime);
       }
 
-      if (!isNextComplete) {
-        setCompletedAt(null);
-      }
-
-      if (isNextComplete) {
-        setCompletedAt((existingCompletedAt) => existingCompletedAt ?? Date.now());
-      }
-
       inputRef.current = nextInput;
       setInput(nextInput);
     },
-    [startedAt, targetText],
+    [startedAt, targetText, isComplete, isLoading],
   );
-
-  const reset = useCallback(() => {
-    const resetTime = Date.now();
-    setInput("");
-    setStartedAt(null);
-    setCompletedAt(null);
-    setHistoricalMistakes(0);
-    setHistoricalTypedCharacters(0);
-    inputRef.current = "";
-    setNow(resetTime);
-  }, []);
 
   const typeCharacter = useCallback(
     (character: string) => {
+      if (isComplete || isLoading) return;
+      if (soundEnabled) soundPlayer.playKeypress();
       const currentInput = inputRef.current;
 
       if (currentInput.length >= targetText.length) {
@@ -109,16 +154,14 @@ export function useTypingGame(targetText = TARGET_TEXT) {
         setNow(eventTime);
       }
 
-      if (nextInput.length === targetText.length) {
-        setCompletedAt((existingCompletedAt) => existingCompletedAt ?? eventTime);
-      }
-
       setInput(nextInput);
     },
-    [startedAt, targetText],
+    [startedAt, targetText, isComplete, isLoading, soundEnabled],
   );
 
   const deleteCharacter = useCallback(() => {
+    if (isComplete || isLoading) return;
+    if (soundEnabled) soundPlayer.playKeypress();
     const currentInput = inputRef.current;
 
     if (currentInput.length === 0) {
@@ -127,13 +170,10 @@ export function useTypingGame(targetText = TARGET_TEXT) {
 
     const nextInput = currentInput.slice(0, -1);
     inputRef.current = nextInput;
-    setCompletedAt(null);
     setInput(nextInput);
-  }, []);
+  }, [isComplete, isLoading, soundEnabled]);
 
   const metrics: TypingMetrics = useMemo(() => {
-    const endTime = completedAt ?? now;
-    const elapsedSeconds = startedAt ? Math.max((endTime - startedAt) / 1000, 0) : 0;
     const correctCharacters = countCorrectCharacters(input, targetText);
     const visibleMistakes = countMistakes(input, targetText);
     const mistakes = Math.max(historicalMistakes, visibleMistakes);
@@ -145,8 +185,16 @@ export function useTypingGame(targetText = TARGET_TEXT) {
       accuracyAttempts > 0
         ? Math.round(((accuracyAttempts - mistakes) / accuracyAttempts) * 100)
         : 100;
-    const progress = correctCharacters / targetText.length;
-    const typedProgress = totalTypedCharacters / targetText.length;
+    
+    // Progress calculation based on mode
+    let progress = 0;
+    if (mode.type === "words") {
+      progress = targetText.length > 0 ? correctCharacters / targetText.length : 0;
+    } else {
+      progress = clamp(elapsedSeconds / mode.value, 0, 1);
+    }
+
+    const typedProgress = targetText.length > 0 ? totalTypedCharacters / targetText.length : 0;
     const altitudeKilometers = getSpeedScoredAltitudeKilometers(progress, accuracy, wpm);
     const altitudeProgress = clamp(altitudeKilometers / MAX_ALTITUDE_KM, 0, 1);
     const atmosphereLevelReached = getAtmosphereLayer(altitudeProgress).name;
@@ -174,6 +222,8 @@ export function useTypingGame(targetText = TARGET_TEXT) {
     now,
     startedAt,
     targetText,
+    mode,
+    elapsedSeconds
   ]);
 
   const characterStatuses: CharacterStatus[] = useMemo(() => {
@@ -195,6 +245,7 @@ export function useTypingGame(targetText = TARGET_TEXT) {
     input,
     characterStatuses,
     metrics,
+    isLoading,
     handleInputChange,
     typeCharacter,
     deleteCharacter,

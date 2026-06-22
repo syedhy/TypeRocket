@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useRef, type CSSProperties } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import {
-  ALTITUDE_ASSETS,
   ALTITUDE_BACKGROUND_LAYERS,
   ALTITUDE_MOTION_CONFIG,
   GRID_VISUAL_CONFIG,
+  fetchAltitudeAssets,
   type AltitudeAssetConfig,
   type AltitudeBackgroundLayer,
 } from "../altitude/altitudeWorld";
@@ -17,6 +17,7 @@ type SkyMotionProps = {
   }) => void;
   onDisplayedAltitudeChange?: (altitudeKilometers: number) => void;
   recentWpm: number;
+  lastKeystrokeAt: number;
   resetKey: number;
 };
 
@@ -167,8 +168,16 @@ export function SkyMotion({
   onFlightStateChange,
   onDisplayedAltitudeChange,
   recentWpm,
+  lastKeystrokeAt,
   resetKey,
 }: SkyMotionProps) {
+  const [dynamicAssets, setDynamicAssets] = useState<AltitudeAssetConfig[]>([]);
+
+  useEffect(() => {
+    // Fetch stunning HD space assets dynamically from NASA's Open Image API
+    fetchAltitudeAssets().then(setDynamicAssets).catch(console.error);
+  }, []);
+
   const rootRef = useRef<HTMLDivElement>(null);
   const frameRef = useRef<number | null>(null);
   const lastTimeRef = useRef<number | null>(null);
@@ -178,13 +187,22 @@ export function SkyMotion({
   const maxTargetOffsetRef = useRef(0);
   const recentWpmRef = useRef(0);
   const isPausedRef = useRef(isPaused);
+  const lastKeystrokeAtRef = useRef(lastKeystrokeAt);
   const onFlightStateChangeRef = useRef(onFlightStateChange);
   const onDisplayedAltitudeChangeRef = useRef(onDisplayedAltitudeChange);
   const previousResetKeyRef = useRef(resetKey);
   const lastReportedAltitudeRef = useRef(-1);
 
+  useEffect(() => {
+    recentWpmRef.current = recentWpm;
+    isPausedRef.current = isPaused;
+    lastKeystrokeAtRef.current = lastKeystrokeAt;
+    onFlightStateChangeRef.current = onFlightStateChange;
+    onDisplayedAltitudeChangeRef.current = onDisplayedAltitudeChange;
+  }, [recentWpm, isPaused, lastKeystrokeAt, onFlightStateChange, onDisplayedAltitudeChange]);
+
   const renderedAssets = useMemo<RenderedAltitudeAsset[]>(() => {
-    return ALTITUDE_ASSETS.map((asset) => {
+    return dynamicAssets.map((asset) => {
       const random = createSeededRandom(asset.seed);
 
       return {
@@ -195,7 +213,7 @@ export function SkyMotion({
         worldY: asset.altitudeKm * ALTITUDE_MOTION_CONFIG.pixelsPerKm,
       };
     });
-  }, []);
+  }, [dynamicAssets]);
 
   const cancelAnimation = () => {
     if (frameRef.current !== null) {
@@ -235,28 +253,48 @@ export function SkyMotion({
       lastTimeRef.current = time;
 
       const currentOffset = offsetRef.current;
-      const cappedTypingSpeed = Math.min(
-        getSpeedFromRecentWpm(recentWpmRef.current),
-        GRID_VISUAL_CONFIG.maximumSpeedPxPerSecond,
-      );
-      const targetSpeed = isPausedRef.current ? 0 : cappedTypingSpeed;
-      const nextVelocity =
-        targetSpeed >= velocityRef.current
-          ? velocityRef.current +
-            (targetSpeed - velocityRef.current) *
-              (1 - Math.exp(-ALTITUDE_MOTION_CONFIG.accelerationSmoothing * deltaSeconds))
-          : Math.max(
-              targetSpeed,
-              velocityRef.current -
-                ALTITUDE_MOTION_CONFIG.coastDecelerationPxPerSecondSquared * deltaSeconds,
-            );
+      
+      const timeSinceLastKeystroke = (Date.now() - lastKeystrokeAtRef.current) / 1000;
+      const isActivelyTyping = timeSinceLastKeystroke < 1.0; // 1 second grace period before slowing down
+      
+      let nextVelocity = velocityRef.current;
+
+      if (isPausedRef.current) {
+        nextVelocity = Math.max(0, nextVelocity - 400 * deltaSeconds);
+      } else if (isActivelyTyping) {
+        // Fluid, gradual acceleration based on WPM
+        // Calculate max theoretical speed they can reach based on current WPM
+        const speedProgress = clamp((recentWpmRef.current - 15) / 105, 0.1, 1.0); 
+        const targetSpeed = interpolateNumber(
+          ALTITUDE_MOTION_CONFIG.minimumSpeedPxPerSecond, 
+          ALTITUDE_MOTION_CONFIG.maximumSpeedPxPerSecond, 
+          Math.pow(speedProgress, 1.15)
+        );
+        
+        // Acceleration rate increases if they type faster, but it's always gradual
+        const acceleration = 150 + (250 * speedProgress); // 150 to 400 px/s^2
+
+        if (nextVelocity < targetSpeed) {
+           nextVelocity += acceleration * deltaSeconds;
+           nextVelocity = Math.min(nextVelocity, targetSpeed);
+        } else {
+           // If their WPM drops slightly but they are still typing, gradually ease down to the new target
+           nextVelocity -= 100 * deltaSeconds;
+           nextVelocity = Math.max(nextVelocity, targetSpeed);
+        }
+      } else {
+        // Pure linear friction: constant deceleration so higher speeds take much longer to stop
+        const fluidDeceleration = 120; // Exactly 120 px/s^2 constant deceleration
+        nextVelocity = Math.max(0, nextVelocity - fluidDeceleration * deltaSeconds);
+      }
+
       const nextOffset = currentOffset + nextVelocity * deltaSeconds;
       const displayedAltitude = nextOffset / ALTITUDE_MOTION_CONFIG.pixelsPerKm;
       const interpolatedLayer = getInterpolatedLayer(displayedAltitude);
 
       offsetRef.current = nextOffset;
       velocityRef.current =
-        targetSpeed === 0 && nextVelocity <= ALTITUDE_MOTION_CONFIG.stopVelocityPxPerSecond
+        (timeSinceLastKeystroke > 1.0) && nextVelocity <= ALTITUDE_MOTION_CONFIG.stopVelocityPxPerSecond
           ? 0
           : nextVelocity;
 
@@ -276,8 +314,8 @@ export function SkyMotion({
       reportAltitude(displayedAltitude);
 
       const shouldKeepMoving =
-        (!isPausedRef.current && targetSpeed > 0) ||
-        velocityRef.current > ALTITUDE_MOTION_CONFIG.stopVelocityPxPerSecond;
+        (!isPausedRef.current && isActivelyTyping) ||
+        velocityRef.current > 0;
 
       if (shouldKeepMoving) {
         frameRef.current = window.requestAnimationFrame(tick);

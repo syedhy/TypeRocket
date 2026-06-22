@@ -1,9 +1,10 @@
 export type AtmosphereLayerId =
-  | "launch-zone"
-  | "troposphere"
-  | "stratosphere"
-  | "mesosphere"
-  | "space";
+  | "atmosphere"
+  | "low-earth-orbit"
+  | "medium-earth-orbit"
+  | "high-earth-orbit"
+  | "lunar-trajectory"
+  | "deep-space";
 
 export type AtmosphereLayer = {
   id: AtmosphereLayerId;

@@ -1,31 +1,12 @@
 import type { AtmosphereLayer } from "../types/game";
 
 export const ATMOSPHERE_LAYERS: AtmosphereLayer[] = [
-  {
-    id: "launch-zone",
-    name: "Launch Zone",
-    range: [0, 20],
-  },
-  {
-    id: "troposphere",
-    name: "Troposphere",
-    range: [20, 45],
-  },
-  {
-    id: "stratosphere",
-    name: "Stratosphere",
-    range: [45, 70],
-  },
-  {
-    id: "mesosphere",
-    name: "Mesosphere",
-    range: [70, 90],
-  },
-  {
-    id: "space",
-    name: "Space",
-    range: [90, 100],
-  },
+  { id: "atmosphere", name: "Atmosphere", range: [0, 1] },
+  { id: "low-earth-orbit", name: "Low Earth Orbit", range: [1, 5] },
+  { id: "medium-earth-orbit", name: "Medium Earth Orbit", range: [5, 15] },
+  { id: "high-earth-orbit", name: "High Earth Orbit", range: [15, 35] },
+  { id: "lunar-trajectory", name: "Lunar Trajectory", range: [35, 65] },
+  { id: "deep-space", name: "Deep Space", range: [65, 100] },
 ];
 
 export function getAtmosphereLayer(progress: number): AtmosphereLayer {

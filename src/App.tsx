@@ -9,6 +9,9 @@ import { Rocket } from "./components/Rocket";
 import { SkyMotion } from "./components/SkyMotion";
 import { TypingText } from "./components/TypingText";
 import { CardBody, CardContainer, CardItem } from "./components/ui/3d-card";
+import { HUD } from "./components/HUD";
+import { CommandPalette } from "./components/CommandPalette";
+import { useGameSettings } from "./contexts/GameSettingsContext";
 
 type FlightState = {
   altitudeKilometers: number;
@@ -80,6 +83,7 @@ function getProjectedStopAltitudeKilometers(
 }
 
 function App() {
+  const { isSettingsModalOpen, setSettingsModalOpen } = useGameSettings();
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const flightStateRef = useRef<FlightState>({
     altitudeKilometers: 0,
@@ -94,6 +98,7 @@ function App() {
     input,
     characterStatuses,
     metrics,
+    isLoading,
     handleInputChange,
     typeCharacter,
     deleteCharacter,
@@ -180,8 +185,24 @@ function App() {
     window.requestAnimationFrame(() => inputRef.current?.focus());
   };
 
-  const handleTypingKeyDown = (event: KeyboardEvent<HTMLElement>) => {
+  useEffect(() => {
+    const down = (e: globalThis.KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        setSettingsModalOpen(!isSettingsModalOpen);
+      }
+    };
+
+    document.addEventListener("keydown", down);
+    return () => document.removeEventListener("keydown", down);
+  }, [isSettingsModalOpen, setSettingsModalOpen]);
+
+  const handleTypingKeyDown = (event: React.KeyboardEvent<HTMLElement>) => {
     if (event.metaKey || event.ctrlKey || event.altKey) {
+      return;
+    }
+
+    if (isSettingsModalOpen) {
       return;
     }
 
@@ -222,11 +243,13 @@ function App() {
       onKeyDown={handleTypingKeyDown}
     >
       <div className="atmosphere-wash fixed inset-0 z-[1]" />
+      <CommandPalette />
       <SkyMotion
         altitudeKilometers={metrics.altitudeKilometers}
         isPaused={resultSnapshot !== null}
         onFlightStateChange={handleFlightStateChange}
         recentWpm={recentSpeed.recentWpm}
+        lastKeystrokeAt={recentSpeed.lastKeystrokeAt}
         resetKey={resetKey}
       />
 
@@ -242,34 +265,9 @@ function App() {
         value={input}
       />
 
-      <nav className="site-nav relative z-50 flex items-center justify-between px-4 py-4 sm:px-6 md:px-12 md:py-6">
-        <div className="flex items-center gap-3">
-          <img className="brand-rocket" src={ROCKET_ASSETS.calm} alt="" aria-hidden="true" />
-          <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.35em] text-muted-ink">
-              launch typing
-            </p>
-            <h1 className="doodle-font text-2xl font-black tracking-tight">TypeRocket</h1>
-          </div>
-        </div>
-
-        <div aria-hidden="true" />
-
-        <button
-          className="doodle-pill inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-black"
-          onClick={(event) => {
-            event.stopPropagation();
-            restart();
-          }}
-          type="button"
-        >
-          <span aria-hidden="true">↻</span>
-          restart
-        </button>
-      </nav>
-
       {metrics.isComplete ? (
         <section className="results-page fixed inset-0 z-40 overflow-y-auto px-4 py-4 sm:px-6 md:px-10">
+
           <div className="results-topbar mx-auto flex w-full max-w-7xl items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <img className="brand-rocket" src={ROCKET_ASSETS.calm} alt="" aria-hidden="true" />
@@ -373,6 +371,33 @@ function App() {
         </section>
       ) : (
         <>
+          <HUD metrics={metrics} isStarted={metrics.typedProgress > 0} isComplete={metrics.isComplete} />
+          
+          <nav className="site-nav relative z-50 flex items-center justify-between px-4 py-4 sm:px-6 md:px-12 md:py-6">
+            <div className="flex items-center gap-3">
+              <img className="brand-rocket" src={ROCKET_ASSETS.calm} alt="" aria-hidden="true" />
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.35em] text-muted-ink">
+                  launch typing
+                </p>
+                <h1 className="doodle-font text-2xl font-black tracking-tight">TypeRocket</h1>
+              </div>
+            </div>
+
+            <div aria-hidden="true" />
+
+            <button
+              className="doodle-pill inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-black"
+              onClick={(event) => {
+                event.stopPropagation();
+                restart();
+              }}
+              type="button"
+            >
+              <span aria-hidden="true">↻</span>
+              restart
+            </button>
+          </nav>
           <section className="home-rocket-shell pointer-events-none absolute inset-x-0 top-[13vh] z-20 flex justify-center">
             <div className="rocket-stage relative h-[52vh] w-full max-w-6xl">
               <Rocket
@@ -387,7 +412,7 @@ function App() {
 
           <section className="typing-panel relative z-30 flex h-[calc(100dvh-88px)] flex-col justify-end px-4 pb-[12vh] sm:px-6 md:px-12">
             <div className="mx-auto w-full max-w-[1120px]">
-              <div className="hud-row mb-4 flex flex-wrap items-center justify-center gap-3 text-xs sm:gap-6 sm:text-sm">
+              <div className={`hud-row mb-4 flex flex-wrap items-center justify-center gap-3 text-xs sm:gap-6 sm:text-sm transition-opacity ${metrics.typedProgress > 0 ? "opacity-0" : "opacity-100"}`}>
                 <span className="inline-flex items-center gap-2">
                   <span aria-hidden="true">↯</span>
                   {Math.round(motionIntensity * 100)}% thrust
@@ -402,7 +427,13 @@ function App() {
                 <span>{displayAltitudeKilometers} km altitude</span>
               </div>
 
-              <TypingText targetText={targetText} statuses={characterStatuses} cursorIndex={input.length} />
+              {isLoading ? (
+                <div className="flex items-center justify-center py-10 opacity-60">
+                  <span className="animate-pulse text-lg font-black tracking-widest text-muted-ink uppercase">Receiving transmission...</span>
+                </div>
+              ) : (
+                <TypingText targetText={targetText} statuses={characterStatuses} cursorIndex={input.length} />
+              )}
             </div>
           </section>
         </>

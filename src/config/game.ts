@@ -7,6 +7,6 @@ export const RECENT_SPEED_WINDOW_MS = 1200;
 
 export const ROCKET_TRAVEL_PERCENT = 72;
 
-export const MAX_ALTITUDE_KM = 260;
+export const MAX_ALTITUDE_KM = 15000;
 
 export const MIN_ELAPSED_SECONDS_FOR_WPM = 1;

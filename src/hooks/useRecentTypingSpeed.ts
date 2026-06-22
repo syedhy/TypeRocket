@@ -58,12 +58,16 @@ export function useRecentTypingSpeed(input: string, targetText: string) {
     const charactersPerSecond = recentCharacters / (RECENT_SPEED_WINDOW_MS / 1000);
     const recentWpm = Math.round((recentCharacters / 5) / (RECENT_SPEED_WINDOW_MS / 60000));
     const intensity = Math.min(charactersPerSecond / 5, 1);
+    const lastKeystrokeAt = eventsRef.current.length > 0 
+      ? eventsRef.current[eventsRef.current.length - 1].at 
+      : 0;
 
     return {
       recentCharacters,
       charactersPerSecond,
       recentWpm,
       intensity,
+      lastKeystrokeAt,
     };
   }, [tick]);
 }

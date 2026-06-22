@@ -12,8 +12,19 @@
   --typing-current: #171717;
   --typing-pending: rgb(23 23 23 / 0.42);
   --typing-incorrect: var(--wrong);
+  --panel-bg: rgb(255 255 255 / 0.82);
+  --panel-border: rgb(23 23 23 / 0.74);
+  --report-bg: rgb(255 255 255 / 0.9);
+  --rocket-panel-border: rgb(23 23 23 / 0.22);
+  --rocket-panel-bg: rgb(255 255 255 / 0.8);
+  --pill-bg: rgb(255 255 255 / 0.76);
+  --pill-hover-bg: rgb(255 255 255 / 0.72);
+  --pill-border: rgb(23 23 23 / 0.82);
+  --progress-border: rgb(23 23 23 / 0.34);
+  --progress-bg: rgb(255 255 255 / 0.72);
   color: var(--ink);
   background: var(--paper);
+  transition: color 1s ease, background-color 1s ease, border-color 1s ease;
   font-family:
     "Chalkboard SE",
     "Comic Sans MS",
@@ -121,42 +132,43 @@ button {
 
 .atmosphere-wash {
   pointer-events: none;
-  background: #ffffff;
+  background: transparent;
 }
 
-.atmosphere-launch-zone .atmosphere-wash {
-  background-color: #ffffff;
-}
-
-.atmosphere-troposphere .atmosphere-wash {
-  background-color: #ffffff;
-}
-
-.atmosphere-stratosphere .atmosphere-wash {
-  background-color: #ffffff;
-}
-
-.atmosphere-mesosphere .atmosphere-wash {
-  background-color: #ffffff;
-}
-
-.atmosphere-space .atmosphere-wash {
-  background-color: #ffffff;
+.atmosphere-high-earth-orbit,
+.atmosphere-lunar-trajectory,
+.atmosphere-deep-space {
+  --ink: #ffffff;
+  --muted-ink: rgb(255 255 255 / 0.5);
+  --paper: #11111a;
+  --typing-correct: #ffffff;
+  --typing-current: #ffffff;
+  --typing-pending: rgb(255 255 255 / 0.42);
+  --panel-bg: rgb(23 23 23 / 0.82);
+  --panel-border: rgb(255 255 255 / 0.3);
+  --report-bg: rgb(23 23 23 / 0.9);
+  --rocket-panel-border: rgb(255 255 255 / 0.22);
+  --rocket-panel-bg: rgb(23 23 23 / 0.8);
+  --pill-bg: rgb(23 23 23 / 0.76);
+  --pill-hover-bg: rgb(23 23 23 / 0.72);
+  --pill-border: rgb(255 255 255 / 0.82);
+  --progress-border: rgb(255 255 255 / 0.34);
+  --progress-bg: rgb(23 23 23 / 0.72);
 }
 
 .doodle-pill {
-  border: 2px solid rgb(23 23 23 / 0.82);
-  background: rgb(255 255 255 / 0.76);
+  border: 2px solid var(--pill-border);
+  background: var(--pill-bg);
   box-shadow: 3px 4px 0 rgb(23 23 23 / 0.12);
   color: var(--ink);
   transition:
     transform 90ms ease,
     box-shadow 90ms ease,
-    background 90ms ease;
+    background 1s ease, border-color 1s ease, color 1s ease;
 }
 
 .doodle-pill:hover {
-  background: rgb(255 255 255 / 0.72);
+  background: var(--pill-hover-bg);
   transform: translate(-1px, -1px);
   box-shadow: 4px 5px 0 rgb(23 23 23 / 0.16);
 }
@@ -230,7 +242,7 @@ button {
   transition:
     transform 42ms cubic-bezier(0.2, 0.9, 0.2, 1),
     height 42ms cubic-bezier(0.2, 0.9, 0.2, 1),
-    opacity 50ms ease;
+    opacity 50ms ease, background-color 1s ease;
   will-change: transform;
 }
 
@@ -329,10 +341,7 @@ button {
   inset: 0;
   z-index: 70;
   overflow-y: auto;
-  background:
-    radial-gradient(circle at 12% 18%, rgb(23 23 23 / 0.04), transparent 18%),
-    radial-gradient(circle at 82% 78%, rgb(23 23 23 / 0.035), transparent 20%),
-    #ffffff;
+  background: transparent;
 }
 
 .results-topbar {
@@ -368,20 +377,21 @@ button {
 .results-rocket-panel {
   position: relative;
   min-height: min(58vh, 560px);
-  border: 3px solid rgb(23 23 23 / 0.22);
+  border: 3px solid var(--rocket-panel-border);
   border-radius: 34% 66% 42% 58% / 46% 36% 64% 54%;
   background:
-    radial-gradient(circle at 50% 40%, rgb(255 255 255 / 0.8), transparent 38%),
+    radial-gradient(circle at 50% 40%, var(--rocket-panel-bg), transparent 38%),
     repeating-linear-gradient(176deg, transparent 0 36px, rgb(23 23 23 / 0.035) 37px 39px);
   box-shadow: 8px 10px 0 rgb(23 23 23 / 0.09);
+  transition: border-color 1s ease;
 }
 
 .mission-report {
-  border: 3px solid rgb(23 23 23 / 0.88);
+  border: 3px solid var(--pill-border);
   border-radius: 30px;
   background:
     radial-gradient(circle, rgb(23 23 23 / 0.13) 0 1px, transparent 1.2px),
-    rgb(255 255 255 / 0.9);
+    var(--report-bg);
   background-size: 22px 22px;
   box-shadow:
     10px 12px 0 rgb(23 23 23 / 0.1),
@@ -389,19 +399,21 @@ button {
   padding: clamp(1rem, 2.6vw, 2rem);
   min-width: 0;
   width: 100%;
+  transition: background-color 1s ease, border-color 1s ease;
 }
 
 .mission-progress {
   width: 100%;
   max-width: 100%;
-  border: 2px solid rgb(23 23 23 / 0.34);
+  border: 2px solid var(--progress-border);
   border-radius: 18px;
   background:
     radial-gradient(circle, rgb(23 23 23 / 0.16) 0 1px, transparent 1.1px),
-    rgb(255 255 255 / 0.72);
+    var(--progress-bg);
   background-size: 18px 18px;
   padding: 0.8rem;
   overflow: hidden;
+  transition: background-color 1s ease, border-color 1s ease;
 }
 
 .mission-progress__bar {
@@ -439,12 +451,13 @@ button {
 
 .result-stat,
 .result-mini {
-  border: 2px solid rgb(23 23 23 / 0.74);
+  border: 2px solid var(--panel-border);
   border-radius: 20px;
-  background: rgb(255 255 255 / 0.82);
+  background: var(--panel-bg);
   box-shadow: 4px 5px 0 rgb(23 23 23 / 0.09);
   padding: 0.85rem;
   min-width: 0;
+  transition: background-color 1s ease, border-color 1s ease;
 }
 
 .result-stat p,
@@ -643,4 +656,131 @@ button {
     scroll-behavior: auto !important;
     transition-duration: 1ms !important;
   }
+}
+
+.settings-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.settings-modal-content {
+  background: var(--bg-color, #171717);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 32px;
+  border-radius: 16px;
+  width: 90%;
+  max-width: 400px;
+  color: var(--text-color, #f5f5f5);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+}
+
+.settings-modal-content h2 {
+  margin-top: 0;
+  margin-bottom: 24px;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.settings-section {
+  margin-bottom: 24px;
+}
+
+.settings-section h3 {
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.6;
+  margin-bottom: 12px;
+}
+
+.settings-options {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.settings-options button {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-color, #f5f5f5);
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.typing-font {
+  font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+}
+
+.doodle-font {
+  font-family: 'Comic Sans MS', 'Chalkboard SE', 'Comic Neue', sans-serif;
+}
+
+.scale-in-center {
+  animation: scale-in-center 0.15s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
+}
+
+@keyframes scale-in-center {
+  0% {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #334155;
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: #475569;
+}
+
+.settings-options button:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.settings-options button.active {
+  background: var(--text-color, #f5f5f5);
+  color: var(--bg-color, #171717);
+  font-weight: 600;
+}
+
+.settings-close-btn {
+  width: 100%;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: var(--text-color, #f5f5f5);
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 16px;
+  margin-top: 8px;
+  transition: background 0.2s;
+}
+
+.settings-close-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
 }
