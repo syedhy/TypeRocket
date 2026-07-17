@@ -1,4 +1,6 @@
 import { type KeyboardEvent, useCallback, useEffect, useRef, useState } from "react";
+import gsap from "gsap";
+import { useGSAP } from "@gsap/react";
 import { ALTITUDE_MOTION_CONFIG, GRID_VISUAL_CONFIG } from "./altitude/altitudeWorld";
 import { ROCKET_ASSETS } from "./config/assets";
 import { getAtmosphereLayer } from "./config/atmosphere";
@@ -12,6 +14,8 @@ import { CardBody, CardContainer, CardItem } from "./components/ui/3d-card";
 import { HUD } from "./components/HUD";
 import { CommandPalette } from "./components/CommandPalette";
 import { useGameSettings } from "./contexts/GameSettingsContext";
+
+gsap.registerPlugin(useGSAP);
 
 type FlightState = {
   altitudeKilometers: number;
@@ -85,6 +89,7 @@ function getProjectedStopAltitudeKilometers(
 function App() {
   const { isSettingsModalOpen, setSettingsModalOpen } = useGameSettings();
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const resultsRef = useRef<HTMLElement>(null);
   const flightStateRef = useRef<FlightState>({
     altitudeKilometers: 0,
     velocityPxPerSecond: 0,
@@ -119,6 +124,17 @@ function App() {
     ),
     1,
   );
+
+  useGSAP(() => {
+    if (metrics.isComplete && resultsRef.current) {
+      const q = gsap.utils.selector(resultsRef.current);
+      gsap.from(q(".results-topbar"), { y: -50, opacity: 0, duration: 0.6, ease: "back.out(1.7)" });
+      gsap.from(q(".results-rocket-panel"), { x: -100, opacity: 0, duration: 0.8, ease: "power3.out", delay: 0.2 });
+      gsap.from(q(".mission-report"), { opacity: 0, y: 50, duration: 0.8, ease: "power3.out", delay: 0.4 });
+      gsap.from(q(".result-stat"), { opacity: 0, y: 20, duration: 0.5, stagger: 0.1, ease: "back.out(1.5)", delay: 0.6 });
+      gsap.from(q(".result-mini"), { opacity: 0, scale: 0.8, duration: 0.4, stagger: 0.1, ease: "power2.out", delay: 1.0 });
+    }
+  }, [metrics.isComplete]);
 
   useEffect(() => {
     inputRef.current?.focus();
@@ -266,7 +282,7 @@ function App() {
       />
 
       {metrics.isComplete ? (
-        <section className="results-page fixed inset-0 z-40 overflow-y-auto px-4 py-4 sm:px-6 md:px-10">
+        <section ref={resultsRef} className="results-page fixed inset-0 z-40 overflow-y-auto px-4 py-4 sm:px-6 md:px-10">
 
           <div className="results-topbar mx-auto flex w-full max-w-7xl items-center justify-between gap-4">
             <div className="flex items-center gap-3">
@@ -443,3 +459,4 @@ function App() {
 }
 
 export default App;
+

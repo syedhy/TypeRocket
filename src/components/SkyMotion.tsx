@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import gsap from "gsap";
+import { useGSAP } from "@gsap/react";
 import {
   ALTITUDE_BACKGROUND_LAYERS,
   ALTITUDE_MOTION_CONFIG,
@@ -7,6 +9,8 @@ import {
   type AltitudeAssetConfig,
   type AltitudeBackgroundLayer,
 } from "../altitude/altitudeWorld";
+
+gsap.registerPlugin(useGSAP);
 
 type SkyMotionProps = {
   altitudeKilometers: number;
@@ -179,8 +183,6 @@ export function SkyMotion({
   }, []);
 
   const rootRef = useRef<HTMLDivElement>(null);
-  const frameRef = useRef<number | null>(null);
-  const lastTimeRef = useRef<number | null>(null);
   const offsetRef = useRef(0);
   const velocityRef = useRef(0);
   const targetOffsetRef = useRef(0);
@@ -215,13 +217,6 @@ export function SkyMotion({
     });
   }, [dynamicAssets]);
 
-  const cancelAnimation = () => {
-    if (frameRef.current !== null) {
-      window.cancelAnimationFrame(frameRef.current);
-      frameRef.current = null;
-    }
-  };
-
   const reportAltitude = (altitude: number) => {
     const roundedAltitude = Math.max(Math.round(altitude * 10) / 10, 0);
 
@@ -233,37 +228,22 @@ export function SkyMotion({
     onDisplayedAltitudeChangeRef.current?.(roundedAltitude);
   };
 
-  const startAnimation = () => {
-    if (frameRef.current !== null) {
-      return;
-    }
-
-    lastTimeRef.current = null;
-
-    const tick = (time: number) => {
+  useGSAP(() => {
+    const tick = (time: number, deltaTime: number) => {
       const root = rootRef.current;
+      if (!root) return;
 
-      if (!root) {
-        frameRef.current = null;
-        return;
-      }
-
-      const lastTime = lastTimeRef.current ?? time;
-      const deltaSeconds = Math.min((time - lastTime) / 1000, 0.05);
-      lastTimeRef.current = time;
-
+      const deltaSeconds = Math.min(deltaTime / 1000, 0.05);
       const currentOffset = offsetRef.current;
       
       const timeSinceLastKeystroke = (Date.now() - lastKeystrokeAtRef.current) / 1000;
-      const isActivelyTyping = timeSinceLastKeystroke < 1.0; // 1 second grace period before slowing down
+      const isActivelyTyping = timeSinceLastKeystroke < 1.0; 
       
       let nextVelocity = velocityRef.current;
 
       if (isPausedRef.current) {
         nextVelocity = Math.max(0, nextVelocity - 400 * deltaSeconds);
       } else if (isActivelyTyping) {
-        // Fluid, gradual acceleration based on WPM
-        // Calculate max theoretical speed they can reach based on current WPM
         const speedProgress = clamp((recentWpmRef.current - 15) / 105, 0.1, 1.0); 
         const targetSpeed = interpolateNumber(
           ALTITUDE_MOTION_CONFIG.minimumSpeedPxPerSecond, 
@@ -271,20 +251,17 @@ export function SkyMotion({
           Math.pow(speedProgress, 1.15)
         );
         
-        // Acceleration rate increases if they type faster, but it's always gradual
-        const acceleration = 150 + (250 * speedProgress); // 150 to 400 px/s^2
+        const acceleration = 150 + (250 * speedProgress); 
 
         if (nextVelocity < targetSpeed) {
            nextVelocity += acceleration * deltaSeconds;
            nextVelocity = Math.min(nextVelocity, targetSpeed);
         } else {
-           // If their WPM drops slightly but they are still typing, gradually ease down to the new target
            nextVelocity -= 100 * deltaSeconds;
            nextVelocity = Math.max(nextVelocity, targetSpeed);
         }
       } else {
-        // Pure linear friction: constant deceleration so higher speeds take much longer to stop
-        const fluidDeceleration = 120; // Exactly 120 px/s^2 constant deceleration
+        const fluidDeceleration = 120; 
         nextVelocity = Math.max(0, nextVelocity - fluidDeceleration * deltaSeconds);
       }
 
@@ -299,46 +276,25 @@ export function SkyMotion({
           : nextVelocity;
 
       const thrust = clamp(velocityRef.current / GRID_VISUAL_CONFIG.maximumSpeedPxPerSecond, 0, 1);
-      root.style.setProperty("--sky-offset", `${nextOffset.toFixed(2)}px`);
-      root.style.setProperty("--grid-offset", `${nextOffset.toFixed(2)}px`);
-      root.style.setProperty("--sky-thrust", `${thrust.toFixed(3)}`);
-      root.style.setProperty("--sky-background", interpolatedLayer.backgroundColor);
-      root.style.setProperty(
-        "--grid-dot",
-        getColorWithAlpha(interpolatedLayer.dotColor, interpolatedLayer.dotOpacity),
-      );
+      
+      // Use GSAP's set for immediate CSS variable updates within the ticker
+      gsap.set(root, {
+        "--sky-offset": `${nextOffset.toFixed(2)}px`,
+        "--grid-offset": `${nextOffset.toFixed(2)}px`,
+        "--sky-thrust": thrust.toFixed(3),
+        "--sky-background": interpolatedLayer.backgroundColor,
+        "--grid-dot": getColorWithAlpha(interpolatedLayer.dotColor, interpolatedLayer.dotOpacity)
+      });
+      
       onFlightStateChangeRef.current?.({
         altitudeKilometers: displayedAltitude,
         velocityPxPerSecond: velocityRef.current,
       });
       reportAltitude(displayedAltitude);
-
-      const shouldKeepMoving =
-        (!isPausedRef.current && isActivelyTyping) ||
-        velocityRef.current > 0;
-
-      if (shouldKeepMoving) {
-        frameRef.current = window.requestAnimationFrame(tick);
-        return;
-      }
-
-      frameRef.current = null;
-      lastTimeRef.current = null;
     };
 
-    frameRef.current = window.requestAnimationFrame(tick);
-  };
-
-  useEffect(() => {
-    onDisplayedAltitudeChangeRef.current = onDisplayedAltitudeChange;
-  }, [onDisplayedAltitudeChange]);
-
-  useEffect(() => {
-    onFlightStateChangeRef.current = onFlightStateChange;
-  }, [onFlightStateChange]);
-
-  useEffect(() => {
-    return cancelAnimation;
+    gsap.ticker.add(tick);
+    return () => gsap.ticker.remove(tick);
   }, []);
 
   useEffect(() => {
@@ -351,15 +307,18 @@ export function SkyMotion({
       targetOffsetRef.current = nextTargetOffset;
       offsetRef.current = nextTargetOffset;
       velocityRef.current = 0;
-      lastTimeRef.current = null;
-      cancelAnimation();
-
+      
       const resetLayer = getInterpolatedLayer(altitudeKilometers);
-      root?.style.setProperty("--sky-offset", `${nextTargetOffset.toFixed(2)}px`);
-      root?.style.setProperty("--grid-offset", `${nextTargetOffset.toFixed(2)}px`);
-      root?.style.setProperty("--sky-thrust", "0");
-      root?.style.setProperty("--sky-background", resetLayer.backgroundColor);
-      root?.style.setProperty("--grid-dot", getColorWithAlpha(resetLayer.dotColor, resetLayer.dotOpacity));
+      if (root) {
+        gsap.set(root, {
+          "--sky-offset": `${nextTargetOffset.toFixed(2)}px`,
+          "--grid-offset": `${nextTargetOffset.toFixed(2)}px`,
+          "--sky-thrust": 0,
+          "--sky-background": resetLayer.backgroundColor,
+          "--grid-dot": getColorWithAlpha(resetLayer.dotColor, resetLayer.dotOpacity)
+        });
+      }
+      
       onFlightStateChangeRef.current?.({
         altitudeKilometers,
         velocityPxPerSecond: 0,
@@ -370,7 +329,6 @@ export function SkyMotion({
 
     maxTargetOffsetRef.current = Math.max(maxTargetOffsetRef.current, nextTargetOffset);
     targetOffsetRef.current = maxTargetOffsetRef.current;
-    startAnimation();
   }, [altitudeKilometers, resetKey]);
 
   useEffect(() => {
@@ -379,16 +337,12 @@ export function SkyMotion({
 
     if (isPaused) {
       velocityRef.current = 0;
-      cancelAnimation();
       onFlightStateChangeRef.current?.({
         altitudeKilometers: offsetRef.current / ALTITUDE_MOTION_CONFIG.pixelsPerKm,
         velocityPxPerSecond: 0,
       });
       reportAltitude(offsetRef.current / ALTITUDE_MOTION_CONFIG.pixelsPerKm);
-      return;
     }
-
-    startAnimation();
   }, [isPaused, recentWpm]);
 
   return (
