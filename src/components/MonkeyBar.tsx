@@ -184,20 +184,23 @@ export function MonkeyBar() {
 
         {mode.type === "words" && textType === "words" && (
           <>
-            {[10, 25, 50, 100].map((wCount) => (
-              <button
-                key={wCount}
-                type="button"
-                onClick={() => setMode({ type: "words", value: wCount })}
-                className={`rounded-xl px-3 py-1 transition-all ${
-                  mode.value === wCount
-                    ? "bg-[var(--ink)] text-[var(--paper)] font-black shadow-sm"
-                    : "text-[var(--muted-ink)] hover:text-[var(--ink)]"
-                }`}
-              >
-                {wCount}
-              </button>
-            ))}
+            {[10, 25, 50, 100].map((wCount) => {
+              const isSelected = mode.value === wCount || (![10, 25, 50, 100].includes(mode.value) && wCount === 25);
+              return (
+                <button
+                  key={wCount}
+                  type="button"
+                  onClick={() => setMode({ type: "words", value: wCount })}
+                  className={`rounded-xl px-3 py-1 transition-all ${
+                    isSelected
+                      ? "bg-[var(--ink)] text-[var(--paper)] font-black shadow-sm"
+                      : "text-[var(--muted-ink)] hover:text-[var(--ink)]"
+                  }`}
+                >
+                  {wCount}
+                </button>
+              );
+            })}
           </>
         )}
 

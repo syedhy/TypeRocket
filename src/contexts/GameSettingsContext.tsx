@@ -54,24 +54,74 @@ interface GameSettingsContextValue {
   setCustomTextModalOpen: (isOpen: boolean) => void;
 }
 
+const STORAGE_KEY = "typerocket_user_settings_v2";
+
 const GameSettingsContext = createContext<GameSettingsContextValue | undefined>(undefined);
 
+function getInitialSettings() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      return {
+        mode: parsed.mode ?? { type: "words", value: 25 },
+        textType: parsed.textType ?? "words",
+        codeLanguage: parsed.codeLanguage ?? "javascript",
+        includePunctuation: parsed.includePunctuation ?? false,
+        includeNumbers: parsed.includeNumbers ?? false,
+        difficulty: parsed.difficulty ?? "medium",
+        soundEnabled: parsed.soundEnabled ?? false,
+        soundProfile: parsed.soundProfile ?? "silent",
+        theme: parsed.theme ?? "doodle",
+        fontFamily: parsed.fontFamily ?? "doodle",
+        caretStyle: parsed.caretStyle ?? "line",
+        smoothCaret: parsed.smoothCaret ?? true,
+        blindMode: parsed.blindMode ?? false,
+        masterMode: parsed.masterMode ?? false,
+        quickRestartKey: parsed.quickRestartKey ?? "tab",
+      };
+    }
+  } catch (e) {
+    console.warn("Failed to load settings from localStorage:", e);
+  }
+
+  return {
+    mode: { type: "words", value: 25 },
+    textType: "words",
+    codeLanguage: "javascript",
+    includePunctuation: false,
+    includeNumbers: false,
+    difficulty: "medium",
+    soundEnabled: false,
+    soundProfile: "silent",
+    theme: "doodle",
+    fontFamily: "doodle",
+    caretStyle: "line",
+    smoothCaret: true,
+    blindMode: false,
+    masterMode: false,
+    quickRestartKey: "tab",
+  };
+}
+
 export function GameSettingsProvider({ children }: { children: ReactNode }) {
-  const [mode, setMode] = useState<GameMode>({ type: "words", value: 30 });
-  const [textType, setTextType] = useState<TextType>("words");
-  const [codeLanguage, setCodeLanguage] = useState<CodeLanguage>("javascript");
-  const [includePunctuation, setIncludePunctuation] = useState<boolean>(false);
-  const [includeNumbers, setIncludeNumbers] = useState<boolean>(false);
-  const [difficulty, setDifficulty] = useState<Difficulty>("medium");
-  const [soundEnabled, setSoundEnabled] = useState<boolean>(false); // Muted by default as requested
-  const [soundProfile, setSoundProfile] = useState<SoundProfile>("silent"); // Muted by default
-  const [theme, setTheme] = useState<Theme>("doodle");
-  const [fontFamily, setFontFamily] = useState<FontFamily>("doodle");
-  const [caretStyle, setCaretStyle] = useState<CaretStyle>("line");
-  const [smoothCaret, setSmoothCaret] = useState<boolean>(true);
-  const [blindMode, setBlindMode] = useState<boolean>(false);
-  const [masterMode, setMasterMode] = useState<boolean>(false);
-  const [quickRestartKey, setQuickRestartKey] = useState<QuickRestartKey>("tab");
+  const initial = getInitialSettings();
+
+  const [mode, setMode] = useState<GameMode>(initial.mode);
+  const [textType, setTextType] = useState<TextType>(initial.textType as TextType);
+  const [codeLanguage, setCodeLanguage] = useState<CodeLanguage>(initial.codeLanguage as CodeLanguage);
+  const [includePunctuation, setIncludePunctuation] = useState<boolean>(initial.includePunctuation);
+  const [includeNumbers, setIncludeNumbers] = useState<boolean>(initial.includeNumbers);
+  const [difficulty, setDifficulty] = useState<Difficulty>(initial.difficulty as Difficulty);
+  const [soundEnabled, setSoundEnabled] = useState<boolean>(initial.soundEnabled);
+  const [soundProfile, setSoundProfile] = useState<SoundProfile>(initial.soundProfile as SoundProfile);
+  const [theme, setTheme] = useState<Theme>(initial.theme as Theme);
+  const [fontFamily, setFontFamily] = useState<FontFamily>(initial.fontFamily as FontFamily);
+  const [caretStyle, setCaretStyle] = useState<CaretStyle>(initial.caretStyle as CaretStyle);
+  const [smoothCaret, setSmoothCaret] = useState<boolean>(initial.smoothCaret);
+  const [blindMode, setBlindMode] = useState<boolean>(initial.blindMode);
+  const [masterMode, setMasterMode] = useState<boolean>(initial.masterMode);
+  const [quickRestartKey, setQuickRestartKey] = useState<QuickRestartKey>(initial.quickRestartKey as QuickRestartKey);
   const [customText, setCustomText] = useState<string>("");
   const [isSettingsModalOpen, setSettingsModalOpen] = useState(false);
   const [isCustomTextModalOpen, setCustomTextModalOpen] = useState(false);
@@ -80,6 +130,50 @@ export function GameSettingsProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     document.body.className = `theme-${theme} font-${fontFamily}`;
   }, [theme, fontFamily]);
+
+  // Persist settings to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({
+          mode,
+          textType,
+          codeLanguage,
+          includePunctuation,
+          includeNumbers,
+          difficulty,
+          soundEnabled,
+          soundProfile,
+          theme,
+          fontFamily,
+          caretStyle,
+          smoothCaret,
+          blindMode,
+          masterMode,
+          quickRestartKey,
+        })
+      );
+    } catch (e) {
+      console.warn("Failed to save settings to localStorage:", e);
+    }
+  }, [
+    mode,
+    textType,
+    codeLanguage,
+    includePunctuation,
+    includeNumbers,
+    difficulty,
+    soundEnabled,
+    soundProfile,
+    theme,
+    fontFamily,
+    caretStyle,
+    smoothCaret,
+    blindMode,
+    masterMode,
+    quickRestartKey,
+  ]);
 
   return (
     <GameSettingsContext.Provider
