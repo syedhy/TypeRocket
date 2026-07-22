@@ -27,7 +27,7 @@ export function WpmChart({ history, wpm, accuracy }: WpmChartProps) {
   const areaD = `${pathD} L ${points[points.length - 1].x} ${height - padding} L ${points[0].x} ${height - padding} Z`;
 
   return (
-    <div className="relative w-full rounded-2xl border-2 border-[var(--panel-border)] bg-[var(--panel-bg)] p-3 sm:p-4 shadow-sm doodle-font">
+    <div className="relative w-full rounded-2xl border-2 border-[var(--panel-border)] bg-[var(--panel-bg)] p-4 sm:p-5 shadow-sm doodle-font">
       <div className="flex items-center justify-between mb-3 px-1 text-xs font-bold">
         <span className="uppercase tracking-widest text-[var(--muted-ink)]">
           Flight Speed Curve (WPM)
@@ -60,7 +60,7 @@ export function WpmChart({ history, wpm, accuracy }: WpmChartProps) {
         ))}
       </svg>
 
-      <div className="flex justify-between items-center mt-2 px-1 text-[11px] font-bold text-[var(--muted-ink)]">
+      <div className="flex justify-between items-center mt-3 px-1 pt-1 text-[11px] font-bold text-[var(--muted-ink)]">
         <span>0s (Start)</span>
         <span>{history.length}s (Finish)</span>
       </div>
