@@ -38,6 +38,8 @@ export function useTypingGame() {
     soundProfile,
     difficulty,
     customText,
+    masterMode,
+    quickRestartKey,
   } = useGameSettings();
 
   const [targetText, setTargetText] = useState("");
@@ -50,6 +52,7 @@ export function useTypingGame() {
   const [historicalTypedCharacters, setHistoricalTypedCharacters] = useState(0);
   const [now, setNow] = useState(() => Date.now());
   const [wpmHistory, setWpmHistory] = useState<number[]>([]);
+  const [failedMasterMode, setFailedMasterMode] = useState(false);
 
   const endTime = completedAt ?? now;
   const elapsedSeconds = startedAt ? Math.max((endTime - startedAt) / 1000, 0) : 0;
@@ -59,13 +62,14 @@ export function useTypingGame() {
   }, [soundEnabled]);
 
   const isComplete = useMemo(() => {
+    if (failedMasterMode) return true;
     if (targetText.length === 0) return false;
     if (mode.type === "words" || textType === "code" || textType === "quotes" || textType === "custom") {
       return input.length === targetText.length;
     } else {
       return startedAt !== null && elapsedSeconds >= mode.value;
     }
-  }, [mode, input.length, targetText.length, startedAt, elapsedSeconds, textType]);
+  }, [mode, input.length, targetText.length, startedAt, elapsedSeconds, textType, failedMasterMode]);
 
   const reset = useCallback(async () => {
     const resetTime = Date.now();
@@ -76,6 +80,7 @@ export function useTypingGame() {
     setHistoricalMistakes(0);
     setHistoricalTypedCharacters(0);
     setWpmHistory([]);
+    setFailedMasterMode(false);
     inputRef.current = "";
     setNow(resetTime);
 
@@ -100,6 +105,18 @@ export function useTypingGame() {
   useEffect(() => {
     reset();
   }, [reset]);
+
+  // Quick restart key binding (Tab key)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (quickRestartKey === "tab" && e.key === "Tab") {
+        e.preventDefault();
+        reset();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [quickRestartKey, reset]);
 
   // Extend buffer for time mode
   useEffect(() => {
@@ -167,9 +184,17 @@ export function useTypingGame() {
         return;
       }
 
+      const targetCharacter = targetText[currentInput.length];
+
+      // Master Mode: Instant failure if mistake typed
+      if (masterMode && character !== targetCharacter) {
+        setFailedMasterMode(true);
+        setCompletedAt(Date.now());
+        return;
+      }
+
       const nextInput = `${currentInput}${character}`.slice(0, targetText.length);
       const eventTime = Date.now();
-      const targetCharacter = targetText[currentInput.length];
 
       inputRef.current = nextInput;
       setHistoricalTypedCharacters((count) => count + 1);
@@ -185,7 +210,7 @@ export function useTypingGame() {
 
       setInput(nextInput);
     },
-    [startedAt, targetText, isComplete, isLoading, soundEnabled, soundProfile]
+    [startedAt, targetText, isComplete, isLoading, soundEnabled, soundProfile, masterMode]
   );
 
   const deleteCharacter = useCallback(() => {

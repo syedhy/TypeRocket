@@ -17,7 +17,7 @@ import { MonkeyBar } from "./components/MonkeyBar";
 import { CustomTextModal } from "./components/CustomTextModal";
 import { WpmChart } from "./components/WpmChart";
 import { useGameSettings } from "./contexts/GameSettingsContext";
-import { Code, Settings, RotateCcw } from "lucide-react";
+import { Settings, RotateCcw } from "lucide-react";
 
 gsap.registerPlugin(useGSAP);
 
@@ -91,7 +91,7 @@ function getProjectedStopAltitudeKilometers(
 }
 
 function App() {
-  const { isSettingsModalOpen, setSettingsModalOpen, textType, codeLanguage } = useGameSettings();
+  const { isSettingsModalOpen, setSettingsModalOpen } = useGameSettings();
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const resultsRef = useRef<HTMLElement>(null);
   const flightStateRef = useRef<FlightState>({
@@ -122,6 +122,8 @@ function App() {
   const resultAltitudeKilometers = resultSnapshot?.altitudeKilometers ?? displayAltitudeKilometers;
   const resultFlightProgress = resultSnapshot?.flightProgress ?? flightProgress;
   const resultLayerName = resultSnapshot?.layerName ?? layer.name;
+  const isTyping = metrics.typedProgress > 0;
+
   const motionIntensity = Math.min(
     Math.max(
       (recentSpeed.recentWpm - ALTITUDE_MOTION_CONFIG.minimumRecentWpm) /
@@ -388,58 +390,55 @@ function App() {
         </section>
       ) : (
         <>
-          <HUD metrics={metrics} isStarted={metrics.typedProgress > 0} isComplete={metrics.isComplete} />
+          <HUD metrics={metrics} isStarted={isTyping} isComplete={metrics.isComplete} />
 
-          <nav className="site-nav relative z-50 flex items-center justify-between px-4 py-3 sm:px-6 md:px-12 md:py-4">
-            <div className="flex items-center gap-3">
-              <img className="brand-rocket" src={ROCKET_ASSETS.calm} alt="" aria-hidden="true" />
-              <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.35em] text-muted-ink">
-                  launch typing
-                </p>
-                <h1 className="doodle-font text-2xl font-black tracking-tight">TypeRocket</h1>
+          {/* Top Navbar & MonkeyBar Container: Completely hides when typing begins! */}
+          <div className={`transition-all duration-300 ease-out ${isTyping ? "opacity-0 pointer-events-none -translate-y-4" : "opacity-100 translate-y-0"}`}>
+            <nav className="site-nav relative z-50 flex items-center justify-between px-4 py-3 sm:px-6 md:px-12 md:py-4">
+              <div className="flex items-center gap-3">
+                <img className="brand-rocket" src={ROCKET_ASSETS.calm} alt="" aria-hidden="true" />
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.35em] text-muted-ink">
+                    launch typing
+                  </p>
+                  <h1 className="doodle-font text-2xl font-black tracking-tight">TypeRocket</h1>
+                </div>
               </div>
-            </div>
 
-            {textType === "code" && (
-              <div className="hidden sm:flex items-center gap-2 rounded-full border-2 border-[var(--ink)] bg-[var(--pill-bg)] px-3 py-1 text-xs font-black text-[var(--ink)]">
-                <Code className="h-4 w-4" />
-                <span className="uppercase">{codeLanguage}</span>
+              <div className="flex items-center gap-2">
+                <button
+                  className="doodle-pill inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-black"
+                  onClick={() => setSettingsModalOpen(true)}
+                  type="button"
+                  title="Settings (ESC)"
+                >
+                  <Settings className="h-4 w-4" />
+                  <span className="hidden sm:inline">Settings</span>
+                </button>
+
+                <button
+                  className="doodle-pill inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-black"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    restart();
+                  }}
+                  type="button"
+                >
+                  <RotateCcw className="h-4 w-4" />
+                  restart
+                </button>
               </div>
-            )}
+            </nav>
 
-            <div className="flex items-center gap-2">
-              <button
-                className="doodle-pill inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-black"
-                onClick={() => setSettingsModalOpen(true)}
-                type="button"
-                title="Settings (ESC)"
-              >
-                <Settings className="h-4 w-4" />
-                <span className="hidden sm:inline">Settings</span>
-              </button>
-
-              <button
-                className="doodle-pill inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-black"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  restart();
-                }}
-                type="button"
-              >
-                <RotateCcw className="h-4 w-4" />
-                restart
-              </button>
+            {/* MonkeyBar Quick Selector */}
+            <div className="pt-2">
+              <MonkeyBar />
             </div>
-          </nav>
-
-          {/* MonkeyBar Quick Selector */}
-          <div className="pt-2">
-            <MonkeyBar />
           </div>
 
-          <section className="home-rocket-shell pointer-events-none absolute inset-x-0 top-[18vh] z-20 flex justify-center">
-            <div className="rocket-stage relative h-[48vh] w-full max-w-6xl">
+          {/* Rocket Stage Container - Fixed Top Position */}
+          <section className="home-rocket-shell pointer-events-none absolute inset-x-0 top-[12vh] z-20 flex justify-center">
+            <div className="rocket-stage relative h-[42vh] w-full max-w-5xl">
               <Rocket
                 progress={flightProgress}
                 intensity={motionIntensity}
@@ -450,9 +449,10 @@ function App() {
             </div>
           </section>
 
-          <section className="typing-panel relative z-30 flex h-[calc(100dvh-150px)] flex-col justify-end px-4 pb-[8vh] sm:px-6 md:px-12">
+          {/* Typing Panel - Clean Bottom Position */}
+          <section className="typing-panel relative z-30 flex h-[calc(100dvh-120px)] flex-col justify-end px-4 pb-[6vh] sm:px-6 md:px-12">
             <div className="mx-auto w-full max-w-[1120px]">
-              <div className={`hud-row mb-4 flex flex-wrap items-center justify-center gap-3 text-xs sm:gap-6 sm:text-sm transition-opacity ${metrics.typedProgress > 0 ? "opacity-0" : "opacity-100"}`}>
+              <div className={`hud-row mb-4 flex flex-wrap items-center justify-center gap-3 text-xs sm:gap-6 sm:text-sm transition-opacity ${isTyping ? "opacity-0" : "opacity-100"}`}>
                 <span className="inline-flex items-center gap-2">
                   <span aria-hidden="true">↯</span>
                   {Math.round(motionIntensity * 100)}% thrust

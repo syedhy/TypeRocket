@@ -6,6 +6,9 @@ export type TextType = "words" | "code" | "quotes" | "custom";
 export type Difficulty = "easy" | "medium" | "hard";
 export type SoundProfile = "default" | "typewriter" | "clicky" | "soft" | "silent";
 export type Theme = "doodle" | "cyberpunk" | "dark-nebula" | "sunset" | "nord" | "dracula";
+export type FontFamily = "doodle" | "jetbrains" | "firacode" | "inter" | "playfair";
+export type CaretStyle = "line" | "block" | "underline" | "pulse";
+export type QuickRestartKey = "tab" | "enter" | "esc";
 
 export interface GameMode {
   type: GameModeType;
@@ -31,6 +34,18 @@ interface GameSettingsContextValue {
   setSoundProfile: (profile: SoundProfile) => void;
   theme: Theme;
   setTheme: (theme: Theme) => void;
+  fontFamily: FontFamily;
+  setFontFamily: (font: FontFamily) => void;
+  caretStyle: CaretStyle;
+  setCaretStyle: (style: CaretStyle) => void;
+  smoothCaret: boolean;
+  setSmoothCaret: (val: boolean) => void;
+  blindMode: boolean;
+  setBlindMode: (val: boolean) => void;
+  masterMode: boolean;
+  setMasterMode: (val: boolean) => void;
+  quickRestartKey: QuickRestartKey;
+  setQuickRestartKey: (key: QuickRestartKey) => void;
   customText: string;
   setCustomText: (text: string) => void;
   isSettingsModalOpen: boolean;
@@ -48,17 +63,23 @@ export function GameSettingsProvider({ children }: { children: ReactNode }) {
   const [includePunctuation, setIncludePunctuation] = useState<boolean>(false);
   const [includeNumbers, setIncludeNumbers] = useState<boolean>(false);
   const [difficulty, setDifficulty] = useState<Difficulty>("medium");
-  const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
-  const [soundProfile, setSoundProfile] = useState<SoundProfile>("default");
+  const [soundEnabled, setSoundEnabled] = useState<boolean>(false); // Muted by default as requested
+  const [soundProfile, setSoundProfile] = useState<SoundProfile>("silent"); // Muted by default
   const [theme, setTheme] = useState<Theme>("doodle");
+  const [fontFamily, setFontFamily] = useState<FontFamily>("doodle");
+  const [caretStyle, setCaretStyle] = useState<CaretStyle>("line");
+  const [smoothCaret, setSmoothCaret] = useState<boolean>(true);
+  const [blindMode, setBlindMode] = useState<boolean>(false);
+  const [masterMode, setMasterMode] = useState<boolean>(false);
+  const [quickRestartKey, setQuickRestartKey] = useState<QuickRestartKey>("tab");
   const [customText, setCustomText] = useState<string>("");
   const [isSettingsModalOpen, setSettingsModalOpen] = useState(false);
   const [isCustomTextModalOpen, setCustomTextModalOpen] = useState(false);
 
-  // Apply theme class to document body
+  // Apply theme & font class to document body
   useEffect(() => {
-    document.body.className = `theme-${theme}`;
-  }, [theme]);
+    document.body.className = `theme-${theme} font-${fontFamily}`;
+  }, [theme, fontFamily]);
 
   return (
     <GameSettingsContext.Provider
@@ -81,6 +102,18 @@ export function GameSettingsProvider({ children }: { children: ReactNode }) {
         setSoundProfile,
         theme,
         setTheme,
+        fontFamily,
+        setFontFamily,
+        caretStyle,
+        setCaretStyle,
+        smoothCaret,
+        setSmoothCaret,
+        blindMode,
+        setBlindMode,
+        masterMode,
+        setMasterMode,
+        quickRestartKey,
+        setQuickRestartKey,
         customText,
         setCustomText,
         isSettingsModalOpen,
