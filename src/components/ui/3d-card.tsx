@@ -47,8 +47,8 @@ export function CardContainer({ children, className = "" }: CardContainerProps) 
         const rect = event.currentTarget.getBoundingClientRect();
         const x = event.clientX - rect.left;
         const y = event.clientY - rect.top;
-        const rotateY = ((x / rect.width) - 0.5) * 14;
-        const rotateX = (0.5 - y / rect.height) * 14;
+        const rotateY = ((x / rect.width) - 0.5) * 22; // 22deg rich interactive tilt
+        const rotateX = (0.5 - y / rect.height) * 22;
 
         setTilt({ rotateX, rotateY });
       }}
@@ -65,10 +65,17 @@ export function CardContainer({ children, className = "" }: CardContainerProps) 
 }
 
 export function CardBody({ children, className = "", style, ...props }: CardBodyProps) {
-  useContext(CardTiltContext);
+  const tilt = useContext(CardTiltContext);
 
   return (
-    <div className={`card-3d-body ${className}`} style={style} {...props}>
+    <div
+      className={`card-3d-body ${className}`}
+      style={{
+        transform: `rotateX(${tilt.rotateX.toFixed(3)}deg) rotateY(${tilt.rotateY.toFixed(3)}deg)`,
+        ...(style as CSSProperties),
+      }}
+      {...props}
+    >
       {children}
     </div>
   );
