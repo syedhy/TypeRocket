@@ -360,7 +360,7 @@ function App() {
                 </div>
 
                 {/* SVG Live WPM Chart */}
-                <CardItem translateZ={28} className="my-6">
+                <CardItem translateZ={28} className="mt-6 mb-8">
                   <WpmChart history={wpmHistory} wpm={resultSnapshot?.wpm ?? metrics.wpm} accuracy={resultSnapshot?.accuracy ?? metrics.accuracy} />
                 </CardItem>
 
