@@ -60,59 +60,40 @@ export const ALTITUDE_BACKGROUND_LAYERS: AltitudeBackgroundLayer[] = [
   { altitudeKm: 15000, backgroundColor: "#000000", dotColor: "#ffffff", dotOpacity: 1.0 },
 ];
 
-// Curated high-res transparent space assets from NASA & Google Noto High Definition vectors
-const SPACE_ASSETS_POOL = [
-  { src: "https://raw.githubusercontent.com/googlefonts/noto-emoji/main/png/512/emoji_u1f30d.png", title: "Earth" },
-  { src: "https://raw.githubusercontent.com/googlefonts/noto-emoji/main/png/512/emoji_u1f315.png", title: "Moon" },
-  { src: "https://raw.githubusercontent.com/googlefonts/noto-emoji/main/png/512/emoji_u1fa90.png", title: "Saturn Ring" },
-  { src: "https://raw.githubusercontent.com/googlefonts/noto-emoji/main/png/512/emoji_u1f30c.png", title: "Milky Way Galaxy" },
-  { src: "https://raw.githubusercontent.com/googlefonts/noto-emoji/main/png/512/emoji_u1f6f0.png", title: "Space Station" },
-  { src: "https://raw.githubusercontent.com/googlefonts/noto-emoji/main/png/512/emoji_u1f320.png", title: "Shooting Star" },
-  { src: "https://raw.githubusercontent.com/googlefonts/noto-emoji/main/png/512/emoji_u1f47d.png", title: "Cosmic Alien" },
-  { src: "https://raw.githubusercontent.com/googlefonts/noto-emoji/main/png/512/emoji_u2604.png", title: "Halley's Comet" },
-  { src: "https://raw.githubusercontent.com/googlefonts/noto-emoji/main/png/512/emoji_u1f6f8.png", title: "UFO Craft" },
-  { src: "https://raw.githubusercontent.com/googlefonts/noto-emoji/main/png/512/emoji_u1f468_200d_1f680.png", title: "Spacewalker" },
-];
-
 export async function fetchAltitudeAssets(): Promise<AltitudeAssetConfig[]> {
-  let nasaImages: string[] = [];
-
-  try {
-    // Attempt fetching live high-res imagery from NASA Official Open Images API
-    const res = await fetch("https://images-api.nasa.gov/search?q=nebula+galaxy+planet&media_type=image&page_size=25");
-    if (res.ok) {
-      const data = await res.json();
-      const items = data?.collection?.items || [];
-      nasaImages = items
-        .map((item: any) => item?.links?.[0]?.href)
-        .filter((url: string | undefined): url is string => Boolean(url && url.startsWith("http")));
-    }
-  } catch {
-    console.warn("NASA API unavailable, using high-definition curated space pool.");
-  }
+  const EMOJI_IDS = [
+    { id: "1f30c", title: "Milky Way" },
+    { id: "1f30d", title: "Earth" },
+    { id: "1f315", title: "Full Moon" },
+    { id: "1f320", title: "Shooting Star" },
+    { id: "1f468_200d_1f680", title: "Astronaut" },
+    { id: "1f47d", title: "Alien" },
+    { id: "1f680", title: "Rocket" },
+    { id: "1f6f0", title: "Satellite" },
+    { id: "1f6f8", title: "Flying Saucer" },
+    { id: "1fa90", title: "Ringed Planet" },
+    { id: "2604", title: "Comet" },
+  ];
 
   const sideOptions: AltitudeAssetSide[] = ["left", "right", "any"];
 
   return Array.from({ length: 80 }).map((_, i) => {
-    const useNasa = nasaImages.length > 0 && Math.random() < 0.4;
-    const poolAsset = SPACE_ASSETS_POOL[i % SPACE_ASSETS_POOL.length];
-    const imgSrc = useNasa
-      ? nasaImages[i % nasaImages.length]
-      : poolAsset.src;
+    const item = EMOJI_IDS[i % EMOJI_IDS.length];
+    const imgSrc = `https://raw.githubusercontent.com/googlefonts/noto-emoji/main/png/512/emoji_u${item.id}.png`;
     
     const altitudeKm = 50 + i * 120 + Math.pow(i, 2.1) * 2;
-    const baseSize = useNasa ? 200 + Math.random() * 180 : 260 + Math.random() * 200;
+    const baseSize = 250 + Math.random() * 200; // 250px to 450px cute prominent PNGs
 
     return {
-      id: `space-asset-${i}`,
+      id: `cute-asset-${i}`,
       src: imgSrc,
       altitudeKm,
       side: sideOptions[i % sideOptions.length],
       seed: i * 999 + Math.floor(Math.random() * 1000),
       minSize: baseSize,
-      maxSize: baseSize + Math.random() * 60,
-      rotationRange: [-25, 25],
-      title: poolAsset.title,
+      maxSize: baseSize + Math.random() * 50,
+      rotationRange: [-30, 30],
+      title: item.title,
     };
   });
 }
