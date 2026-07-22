@@ -47,8 +47,8 @@ export function CardContainer({ children, className = "" }: CardContainerProps) 
         const rect = event.currentTarget.getBoundingClientRect();
         const x = event.clientX - rect.left;
         const y = event.clientY - rect.top;
-        const rotateY = ((x / rect.width) - 0.5) * 22; // 22deg rich interactive tilt
-        const rotateX = (0.5 - y / rect.height) * 22;
+        const rotateY = ((x / rect.width) - 0.5) * 7.5; // Subtle, elegant 7.5deg tilt
+        const rotateX = (0.5 - y / rect.height) * 7.5;
 
         setTilt({ rotateX, rotateY });
       }}
