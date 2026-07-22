@@ -259,22 +259,19 @@ export function useTypingGame() {
       remainingValue = `${secondsLeft}s`;
     } else if (mode.type === "words" && textType === "words") {
       const totalWords = mode.value;
-      const typedWordCount = input.trim().length > 0 ? input.trim().split(/\s+/).length : 0;
-      const wordsLeft = Math.max(totalWords - typedWordCount, 0);
-      remainingLabel = "WORDS LEFT";
-      remainingValue = `${wordsLeft} / ${totalWords}`;
+      const typedWordCount = Math.min(input.trim().length > 0 ? input.trim().split(/\s+/).length : 0, totalWords);
+      remainingLabel = "WORDS";
+      remainingValue = `${typedWordCount} / ${totalWords}`;
     } else if (textType === "code") {
       const totalLines = targetText.split("\n").length;
-      const typedLines = input.split("\n").length;
-      const linesLeft = Math.max(totalLines - typedLines, 0);
-      remainingLabel = "LINES LEFT";
-      remainingValue = `${linesLeft} / ${totalLines}`;
+      const typedLines = Math.min(input.trim().length > 0 ? input.split("\n").length : 0, totalLines);
+      remainingLabel = "LINES";
+      remainingValue = `${typedLines} / ${totalLines}`;
     } else {
       const totalWords = targetText.trim().length > 0 ? targetText.trim().split(/\s+/).length : 0;
-      const typedWordCount = input.trim().length > 0 ? input.trim().split(/\s+/).length : 0;
-      const wordsLeft = Math.max(totalWords - typedWordCount, 0);
-      remainingLabel = "WORDS LEFT";
-      remainingValue = `${wordsLeft} left`;
+      const typedWordCount = Math.min(input.trim().length > 0 ? input.trim().split(/\s+/).length : 0, totalWords);
+      remainingLabel = "WORDS";
+      remainingValue = `${typedWordCount} / ${totalWords}`;
     }
 
     return {
