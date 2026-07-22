@@ -21,19 +21,21 @@ export function MonkeyBar() {
 
   const handleModeChange = (newModeType: GameModeType) => {
     if (newModeType === "time") {
-      setMode({ type: "time", value: mode.type === "time" ? mode.value : 30 });
+      const validTime = [15, 30, 60, 120].includes(mode.value) ? mode.value : 30;
+      setMode({ type: "time", value: validTime });
       setTextType("words");
     } else if (newModeType === "words") {
-      setMode({ type: "words", value: mode.type === "words" ? mode.value : 30 });
+      const validWords = [10, 25, 50, 100].includes(mode.value) ? mode.value : 25;
+      setMode({ type: "words", value: validWords });
       setTextType("words");
     } else if (newModeType === "quote") {
-      setMode({ type: "words", value: 30 });
+      setMode({ type: "words", value: 25 });
       setTextType("quotes");
     } else if (newModeType === "code") {
-      setMode({ type: "words", value: 30 });
+      setMode({ type: "words", value: 25 });
       setTextType("code");
     } else if (newModeType === "custom") {
-      setMode({ type: "words", value: 30 });
+      setMode({ type: "words", value: 25 });
       setTextType("custom");
       setCustomTextModalOpen(true);
     }
@@ -47,19 +49,19 @@ export function MonkeyBar() {
   };
 
   const LANGUAGES: { id: CodeLanguage; label: string }[] = [
-    { id: "python", label: "Python" },
-    { id: "javascript", label: "JavaScript" },
-    { id: "typescript", label: "TypeScript" },
-    { id: "java", label: "Java" },
-    { id: "cpp", label: "C++" },
-    { id: "rust", label: "Rust" },
-    { id: "go", label: "Go" },
-    { id: "html", label: "HTML" },
-    { id: "sql", label: "SQL" },
+    { id: "python", label: "python" },
+    { id: "javascript", label: "javascript" },
+    { id: "typescript", label: "typescript" },
+    { id: "java", label: "java" },
+    { id: "cpp", label: "c++" },
+    { id: "rust", label: "rust" },
+    { id: "go", label: "go" },
+    { id: "html", label: "html" },
+    { id: "sql", label: "sql" },
   ];
 
   return (
-    <div className="relative z-40 mx-auto flex w-full max-w-4xl flex-wrap items-center justify-center gap-3 p-1 doodle-font text-xs font-bold text-[var(--ink)] sm:text-sm">
+    <div className="relative z-40 mx-auto flex w-full max-w-5xl flex-wrap items-center justify-center gap-3 p-1 doodle-font text-xs font-bold text-[var(--ink)] sm:text-sm">
       {/* Group 1: Modifiers (Punctuation & Numbers) */}
       <div className="flex items-center gap-1 rounded-2xl border-2 border-[var(--ink)] bg-[var(--panel-bg)] p-1.5 shadow-md backdrop-blur-md">
         <button
@@ -159,8 +161,8 @@ export function MonkeyBar() {
         </button>
       </div>
 
-      {/* Group 3: Sub-options (Durations / Word Counts / Language / Settings) */}
-      <div className="flex items-center gap-1 rounded-2xl border-2 border-[var(--ink)] bg-[var(--panel-bg)] p-1.5 shadow-md backdrop-blur-md">
+      {/* Group 3: Sub-options (Time seconds / Words count / Code Languages / Settings) */}
+      <div className="flex items-center gap-1 rounded-2xl border-2 border-[var(--ink)] bg-[var(--panel-bg)] p-1.5 shadow-md backdrop-blur-md max-w-full overflow-x-auto custom-scrollbar">
         {mode.type === "time" && textType === "words" && (
           <>
             {[15, 30, 60, 120].map((sec) => (
@@ -200,24 +202,29 @@ export function MonkeyBar() {
         )}
 
         {textType === "code" && (
-          <select
-            value={codeLanguage}
-            onChange={(e) => setCodeLanguage(e.target.value as CodeLanguage)}
-            className="rounded-xl border-2 border-[var(--ink)] bg-[var(--paper)] px-3 py-1 text-xs font-black text-[var(--ink)] outline-none cursor-pointer"
-          >
+          <div className="flex items-center gap-1 overflow-x-auto custom-scrollbar px-1">
             {LANGUAGES.map((lang) => (
-              <option key={lang.id} value={lang.id}>
+              <button
+                key={lang.id}
+                type="button"
+                onClick={() => setCodeLanguage(lang.id)}
+                className={`rounded-xl px-2.5 py-1 text-xs font-black transition-all ${
+                  codeLanguage === lang.id
+                    ? "bg-[var(--ink)] text-[var(--paper)] shadow-sm"
+                    : "text-[var(--muted-ink)] hover:text-[var(--ink)]"
+                }`}
+              >
                 {lang.label}
-              </option>
+              </button>
             ))}
-          </select>
+          </div>
         )}
 
         {/* Settings Icon */}
         <button
           type="button"
           onClick={() => setSettingsModalOpen(true)}
-          className="rounded-xl p-1.5 text-[var(--ink)] hover:bg-[var(--pill-hover-bg)] transition-colors ml-1"
+          className="rounded-xl p-1.5 text-[var(--ink)] hover:bg-[var(--pill-hover-bg)] transition-colors ml-1 shrink-0"
           title="Open Settings (ESC)"
         >
           <Settings className="h-4 w-4" />
