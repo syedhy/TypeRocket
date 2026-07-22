@@ -34,11 +34,11 @@ export function TypingText({ targetText, statuses, cursorIndex }: TypingTextProp
 
     const containerRect = container.getBoundingClientRect();
     const anchorRect = anchor.getBoundingClientRect();
-    const cursorHeight = Math.max(anchorRect.height * 1.1, 28);
+    const cursorHeight = Math.max(anchorRect.height * 1.15, 32);
 
     // Calculate vertical line shifting (Monkeytype style)
     const anchorRelativeTop = anchorRect.top - wrapper.getBoundingClientRect().top;
-    const lineHeight = anchorRect.height || 36;
+    const lineHeight = anchorRect.height || 42;
     const currentLineNumber = Math.floor(anchorRelativeTop / (lineHeight || 1));
 
     // Shift text container up when user types past line 1 (showing lines line-1, line, line+1)
@@ -65,15 +65,18 @@ export function TypingText({ targetText, statuses, cursorIndex }: TypingTextProp
 
   // Caret style class mapping
   const caretClasses: Record<string, string> = {
-    line: "w-[3px] rounded-full bg-[var(--ink)]",
+    line: "w-[3.5px] rounded-full bg-[var(--ink)]",
     block: "w-[1ch] bg-[var(--ink)] opacity-40 rounded-sm",
     underline: "h-[4px] w-[1ch] bg-[var(--ink)] self-end rounded-sm",
-    pulse: "w-[3.5px] rounded-full bg-[var(--ink)] animate-pulse shadow-[0_0_8px_var(--ink)]",
+    pulse: "w-[4px] rounded-full bg-[var(--ink)] animate-pulse shadow-[0_0_10px_var(--ink)]",
   };
+
+  let charIndexCounter = 0;
+  const wordTokens = targetText.match(/\S+\s*/g) ?? [targetText];
 
   return (
     <div
-      className={`typing-line relative mx-auto max-w-[960px] max-h-[140px] overflow-hidden p-2 text-[clamp(1.15rem,2.2vw,2.2rem)] leading-[1.4] select-none ${
+      className={`typing-line relative mx-auto max-w-[1000px] max-h-[170px] overflow-hidden p-2 text-[clamp(1.4rem,2.8vw,3.2rem)] leading-[1.45] select-none ${
         isCode ? "font-mono tracking-tight" : "doodle-font font-bold"
       }`}
       ref={containerRef}
@@ -86,7 +89,7 @@ export function TypingText({ targetText, statuses, cursorIndex }: TypingTextProp
         ref={cursorRef}
         style={
           {
-            "--cursor-height": "34px",
+            "--cursor-height": "40px",
             "--cursor-x": "0px",
             "--cursor-y": "0px",
             opacity: 0,
@@ -98,35 +101,43 @@ export function TypingText({ targetText, statuses, cursorIndex }: TypingTextProp
       {/* Vertical Shifting Text Wrapper */}
       <div
         ref={textWrapperRef}
-        className="whitespace-pre-wrap break-words transition-transform duration-200 ease-out"
+        className="flex flex-wrap transition-transform duration-200 ease-out"
         style={{ transform: `translateY(-${lineOffsetY}px)` }}
       >
-        {targetText.split("").map((character, index) => {
-          const isNewline = character === "\n";
-          const status = statuses[index];
-
-          let statusClass = "text-[var(--typing-pending)]";
-          if (status === "correct") {
-            statusClass = "text-[var(--typing-correct)] font-black";
-          } else if (status === "incorrect") {
-            statusClass = blindMode
-              ? "text-[var(--typing-correct)] font-black" // Blind mode doesn't reveal mistakes until end
-              : "text-[var(--wrong)] underline decoration-wavy font-black";
-          }
+        {wordTokens.map((wordToken, wordIndex) => {
+          const wordStartIndex = charIndexCounter;
+          charIndexCounter += wordToken.length;
 
           return (
-            <Fragment key={`char-${index}`}>
-              {index === cursorIndex && cursorAnchor}
-              {isNewline ? (
-                <span className={`inline-block w-full ${statusClass}`}>
-                  ↵{"\n"}
-                </span>
-              ) : (
-                <span className={`relative inline-block min-w-[0.34ch] ${statusClass}`}>
-                  {character}
-                </span>
-              )}
-            </Fragment>
+            <span className="inline-block whitespace-nowrap" key={`word-${wordIndex}`}>
+              {wordToken.split("").map((character, offset) => {
+                const index = wordStartIndex + offset;
+                const status = statuses[index];
+                const isNewline = character === "\n";
+
+                let statusClass = "text-[var(--typing-pending)]";
+                if (status === "correct") {
+                  statusClass = "text-[var(--typing-correct)] font-black";
+                } else if (status === "incorrect") {
+                  statusClass = blindMode
+                    ? "text-[var(--typing-correct)] font-black"
+                    : "text-[var(--wrong)] underline decoration-wavy font-black";
+                }
+
+                return (
+                  <Fragment key={`char-${index}`}>
+                    {index === cursorIndex && cursorAnchor}
+                    {isNewline ? (
+                      <span className={`inline-block w-full ${statusClass}`}>↵{"\n"}</span>
+                    ) : (
+                      <span className={`relative inline-block min-w-[0.34ch] ${statusClass}`}>
+                        {character}
+                      </span>
+                    )}
+                  </Fragment>
+                );
+              })}
+            </span>
           );
         })}
         {cursorIndex === targetText.length && cursorAnchor}
