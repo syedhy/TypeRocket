@@ -5,6 +5,7 @@ import {
   type CSSProperties,
 } from "react";
 import type { CharacterStatus } from "../types/game";
+import { useGameSettings } from "../contexts/GameSettingsContext";
 
 type TypingTextProps = {
   targetText: string;
@@ -20,11 +21,10 @@ const statusClassNames: Record<CharacterStatus, string> = {
 };
 
 export function TypingText({ targetText, statuses, cursorIndex }: TypingTextProps) {
+  const { textType } = useGameSettings();
   const containerRef = useRef<HTMLDivElement>(null);
   const cursorAnchorRef = useRef<HTMLSpanElement>(null);
   const cursorRef = useRef<HTMLSpanElement>(null);
-  let characterIndex = 0;
-  const tokens = targetText.match(/\S+\s*/g) ?? [];
 
   useLayoutEffect(() => {
     const container = containerRef.current;
@@ -43,7 +43,7 @@ export function TypingText({ targetText, statuses, cursorIndex }: TypingTextProp
     cursor.style.setProperty("--cursor-x", `${anchorRect.left - containerRect.left}px`);
     cursor.style.setProperty(
       "--cursor-y",
-      `${anchorRect.top - containerRect.top - (cursorHeight - anchorRect.height) / 2}px`,
+      `${anchorRect.top - containerRect.top - (cursorHeight - anchorRect.height) / 2}px`
     );
     cursor.style.opacity = "1";
   }, [cursorIndex, targetText]);
@@ -52,9 +52,13 @@ export function TypingText({ targetText, statuses, cursorIndex }: TypingTextProp
     <span className="typing-cursor-anchor" ref={cursorAnchorRef} aria-hidden="true" />
   );
 
+  const isCode = textType === "code";
+
   return (
     <div
-      className="typing-line mx-auto max-w-[980px] text-[clamp(1.18rem,2.75vw,3rem)] leading-[1.16]"
+      className={`typing-line mx-auto max-w-[980px] text-[clamp(1.1rem,2.5vw,2.5rem)] leading-[1.3] ${
+        isCode ? "font-mono tracking-tight" : "doodle-font"
+      }`}
       ref={containerRef}
     >
       <span
@@ -71,30 +75,29 @@ export function TypingText({ targetText, statuses, cursorIndex }: TypingTextProp
         aria-hidden="true"
       />
 
-      {tokens.map((token, tokenIndex) => {
-        const startIndex = characterIndex;
-        characterIndex += token.length;
+      <div className="whitespace-pre-wrap break-words">
+        {targetText.split("").map((character, index) => {
+          const isNewline = character === "\n";
 
-        return (
-          <span className="inline-block whitespace-nowrap" key={`${token}-${tokenIndex}`}>
-            {token.split("").map((character, offset) => {
-              const index = startIndex + offset;
-
-              return (
-                <Fragment key={`${character}-${index}`}>
-                  {index === cursorIndex && cursorAnchor}
-                  <span
-                    className={`relative inline-block min-w-[0.34ch] ${statusClassNames[statuses[index]]}`}
-                  >
-                    {character}
-                  </span>
-                </Fragment>
-              );
-            })}
-          </span>
-        );
-      })}
-      {cursorIndex === targetText.length && cursorAnchor}
+          return (
+            <Fragment key={`char-${index}`}>
+              {index === cursorIndex && cursorAnchor}
+              {isNewline ? (
+                <span className={`inline-block w-full ${statusClassNames[statuses[index]]}`}>
+                  ↵{"\n"}
+                </span>
+              ) : (
+                <span
+                  className={`relative inline-block min-w-[0.35ch] ${statusClassNames[statuses[index]]}`}
+                >
+                  {character}
+                </span>
+              )}
+            </Fragment>
+          );
+        })}
+        {cursorIndex === targetText.length && cursorAnchor}
+      </div>
     </div>
   );
 }

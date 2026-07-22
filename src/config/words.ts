@@ -1,40 +1,63 @@
-export const COMMON_WORDS = [
-  "the", "be", "to", "of", "and", "a", "in", "that", "have", "i",
-  "it", "for", "not", "on", "with", "he", "as", "you", "do", "at",
-  "this", "but", "his", "by", "from", "they", "we", "say", "her", "she",
-  "or", "an", "will", "my", "one", "all", "would", "there", "their", "what",
-  "so", "up", "out", "if", "about", "who", "get", "which", "go", "me",
-  "when", "make", "can", "like", "time", "no", "just", "him", "know", "take",
-  "people", "into", "year", "your", "good", "some", "could", "them", "see", "other",
-  "than", "then", "now", "look", "only", "come", "its", "over", "think", "also",
-  "back", "after", "use", "two", "how", "our", "work", "first", "well", "way",
-  "even", "new", "want", "because", "any", "these", "give", "day", "most", "us",
-  "is", "are", "was", "were", "been", "has", "had", "does", "did", "doing",
-  "am", "is", "are", "was", "were", "be", "being", "been", "have", "has",
-  "had", "do", "does", "did", "shall", "will", "should", "would", "may", "might",
-  "must", "can", "could", "ought", "need", "dare", "used", "to", "a", "an",
-  "the", "and", "but", "or", "for", "nor", "so", "yet", "after", "although",
-  "as", "because", "before", "even", "if", "in", "order", "that", "since", "though",
-  "unless", "until", "when", "whenever", "where", "whereas", "wherever", "whether", "while", "he",
-  "she", "it", "they", "him", "her", "them", "his", "hers", "its", "theirs",
-  "space", "planet", "stars", "orbit", "rocket", "comet", "galaxy", "moon", "mars", "earth"
-];
-
 import { Difficulty } from "../contexts/GameSettingsContext";
 import { EASY_WORDS, MEDIUM_WORDS, HARD_WORDS } from "./dictionary";
+import { CODE_SNIPPETS, CodeLanguage } from "./codeSnippets";
 
-export const CODE_WORDS = [
-  "const", "let", "var", "function", "return", "if", "else", "for", "while", "do",
-  "switch", "case", "break", "continue", "default", "class", "extends", "super",
-  "this", "new", "true", "false", "null", "undefined", "NaN", "Infinity",
-  "import", "export", "from", "as", "default", "async", "await", "yield",
-  "try", "catch", "finally", "throw", "typeof", "instanceof", "in", "of",
-  "void", "delete", "debugger", "with", "=>", "==", "===", "!=", "!==",
-  "&&", "||", "!", "+", "-", "*", "/", "%", "++", "--", "=", "+=", "-=",
-  "[]", "{}", "()", ";", ":", ",", ".", "?", "??", "?.[]", "?.()"
-];
+const PUNCTUATION_MARKS = [".", ",", "!", "?", ";", ":", "-", '"', "'"];
+const COMMON_NUMBERS = ["1", "2", "3", "7", "10", "42", "69", "100", "365", "2026", "99"];
 
-export async function generateRandomWords(count: number, type: "words" | "code" | "quotes" = "words", difficulty: Difficulty = "medium"): Promise<string> {
+function applyModifiers(words: string[], punctuation: boolean, numbers: boolean): string[] {
+  let result = [...words];
+
+  if (numbers) {
+    result = result.map((word) => {
+      if (Math.random() < 0.25) {
+        const num = COMMON_NUMBERS[Math.floor(Math.random() * COMMON_NUMBERS.length)];
+        return Math.random() < 0.5 ? `${num}` : `${word} ${num}`;
+      }
+      return word;
+    });
+  }
+
+  if (punctuation) {
+    result = result.map((word, idx) => {
+      if (Math.random() < 0.3) {
+        const mark = PUNCTUATION_MARKS[Math.floor(Math.random() * PUNCTUATION_MARKS.length)];
+        if (mark === '"' || mark === "'") {
+          return `${mark}${word}${mark}`;
+        }
+        return `${word}${mark}`;
+      }
+      if (idx === 0) {
+        return word.charAt(0).toUpperCase() + word.slice(1);
+      }
+      return word;
+    });
+  }
+
+  return result;
+}
+
+export async function generateRandomWords(
+  count: number,
+  type: "words" | "code" | "quotes" | "custom" = "words",
+  difficulty: Difficulty = "medium",
+  codeLanguage: CodeLanguage = "javascript",
+  punctuation: boolean = false,
+  numbers: boolean = false,
+  customText: string = ""
+): Promise<string> {
+  if (type === "custom") {
+    return customText && customText.trim().length > 0
+      ? customText.trim()
+      : "Constellation telemetry active. TypeRocket engines ignited!";
+  }
+
+  if (type === "code") {
+    const snippets = CODE_SNIPPETS[codeLanguage] || CODE_SNIPPETS.javascript;
+    const randomIndex = Math.floor(Math.random() * snippets.length);
+    return snippets[randomIndex];
+  }
+
   if (type === "quotes") {
     try {
       const skip = Math.floor(Math.random() * 1400);
@@ -42,40 +65,43 @@ export async function generateRandomWords(count: number, type: "words" | "code" 
       if (res.ok) {
         const data = await res.json();
         if (data && data.quotes && data.quotes.length > 0) {
-          return data.quotes.map((q: any) => q.quote).join(" ");
+          return data.quotes.map((q: { quote: string }) => q.quote).join(" ");
         }
       }
-    } catch (e) {
-      console.warn("Quotes API failed, falling back to local");
+    } catch {
+      console.warn("Quotes API offline, using curated quotes");
     }
-    return "The quick brown fox jumps over the lazy dog. A journey of a thousand miles begins with a single step.";
+    const fallbackQuotes = [
+      "That's one small step for man, one giant leap for mankind.",
+      "The universe is under no obligation to make sense to you.",
+      "Across the sea of space, the stars are other suns.",
+      "Somewhere, something incredible is waiting to be known."
+    ];
+    return fallbackQuotes[Math.floor(Math.random() * fallbackQuotes.length)];
   }
 
   let dictionary: string[] = [];
 
-  if (type === "code") {
-    dictionary = CODE_WORDS;
-  } else {
-    // For 'words' type, use offline dictionary for 0ms latency and difficulty scaling
-    switch (difficulty) {
-      case "easy":
-        dictionary = EASY_WORDS;
-        break;
-      case "medium":
-        dictionary = MEDIUM_WORDS;
-        break;
-      case "hard":
-        dictionary = HARD_WORDS;
-        break;
-      default:
-        dictionary = MEDIUM_WORDS;
-    }
+  switch (difficulty) {
+    case "easy":
+      dictionary = EASY_WORDS;
+      break;
+    case "medium":
+      dictionary = MEDIUM_WORDS;
+      break;
+    case "hard":
+      dictionary = HARD_WORDS;
+      break;
+    default:
+      dictionary = MEDIUM_WORDS;
   }
 
-  const selectedWords = [];
+  const selectedWords: string[] = [];
   for (let i = 0; i < count; i++) {
     const randomIndex = Math.floor(Math.random() * dictionary.length);
     selectedWords.push(dictionary[randomIndex]);
   }
-  return selectedWords.join(" ");
+
+  const modifiedWords = applyModifiers(selectedWords, punctuation, numbers);
+  return modifiedWords.join(" ");
 }

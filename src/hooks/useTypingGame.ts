@@ -24,13 +24,22 @@ function clamp(value: number, min: number, max: number) {
 
 function getSpeedScoredAltitudeKilometers(correctProgress: number, accuracy: number, wpm: number) {
   const accuracyMultiplier = clamp(accuracy / 100, 0, 1);
-
-  // Buffed altitude progression so an 80 WPM typist can reach near 15000 km
   return Math.round((Math.pow(wpm, 2) * 1.8 + 25 * wpm) * correctProgress * Math.pow(accuracyMultiplier, 2));
 }
 
 export function useTypingGame() {
-  const { mode, textType, soundEnabled, difficulty } = useGameSettings();
+  const {
+    mode,
+    textType,
+    codeLanguage,
+    includePunctuation,
+    includeNumbers,
+    soundEnabled,
+    soundProfile,
+    difficulty,
+    customText,
+  } = useGameSettings();
+
   const [targetText, setTargetText] = useState("");
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(true);
@@ -40,6 +49,7 @@ export function useTypingGame() {
   const [historicalMistakes, setHistoricalMistakes] = useState(0);
   const [historicalTypedCharacters, setHistoricalTypedCharacters] = useState(0);
   const [now, setNow] = useState(() => Date.now());
+  const [wpmHistory, setWpmHistory] = useState<number[]>([]);
 
   const endTime = completedAt ?? now;
   const elapsedSeconds = startedAt ? Math.max((endTime - startedAt) / 1000, 0) : 0;
@@ -50,12 +60,12 @@ export function useTypingGame() {
 
   const isComplete = useMemo(() => {
     if (targetText.length === 0) return false;
-    if (mode.type === "words") {
+    if (mode.type === "words" || textType === "code" || textType === "quotes" || textType === "custom") {
       return input.length === targetText.length;
     } else {
       return startedAt !== null && elapsedSeconds >= mode.value;
     }
-  }, [mode, input.length, targetText.length, startedAt, elapsedSeconds]);
+  }, [mode, input.length, targetText.length, startedAt, elapsedSeconds, textType]);
 
   const reset = useCallback(async () => {
     const resetTime = Date.now();
@@ -65,33 +75,41 @@ export function useTypingGame() {
     setCompletedAt(null);
     setHistoricalMistakes(0);
     setHistoricalTypedCharacters(0);
+    setWpmHistory([]);
     inputRef.current = "";
     setNow(resetTime);
 
-    let text = "";
-    if (mode.type === "words") {
-      text = await generateRandomWords(mode.value, textType, difficulty);
-    } else {
-      text = await generateRandomWords(100, textType, difficulty); // Large buffer for time mode
-    }
-    
+    let count = 30;
+    if (mode.type === "words") count = mode.value;
+    if (mode.type === "time") count = 100;
+
+    const text = await generateRandomWords(
+      count,
+      textType,
+      difficulty,
+      codeLanguage,
+      includePunctuation,
+      includeNumbers,
+      customText
+    );
+
     setTargetText(text);
     setIsLoading(false);
-  }, [mode, textType, difficulty]);
+  }, [mode, textType, difficulty, codeLanguage, includePunctuation, includeNumbers, customText]);
 
-  // Initial load or mode change
   useEffect(() => {
     reset();
   }, [reset]);
 
-  // Time mode buffer extension
+  // Extend buffer for time mode
   useEffect(() => {
-    if (mode.type === "time" && targetText.length > 0 && input.length >= targetText.length - 30 && !isComplete) {
-      generateRandomWords(50, textType, difficulty).then(more => setTargetText((prev) => prev + " " + more));
+    if (mode.type === "time" && textType === "words" && targetText.length > 0 && input.length >= targetText.length - 30 && !isComplete) {
+      generateRandomWords(50, textType, difficulty, codeLanguage, includePunctuation, includeNumbers, customText).then(
+        (more) => setTargetText((prev) => prev + " " + more)
+      );
     }
-  }, [mode.type, input.length, targetText.length, isComplete, textType, difficulty]);
+  }, [mode.type, input.length, targetText.length, isComplete, textType, difficulty, codeLanguage, includePunctuation, includeNumbers, customText]);
 
-  // Time mode completion check
   useEffect(() => {
     if (isComplete && !completedAt) {
       setCompletedAt(Date.now());
@@ -102,14 +120,25 @@ export function useTypingGame() {
     inputRef.current = input;
   }, [input]);
 
+  // Timer loop & WPM history sampler
   useEffect(() => {
     if (!startedAt || completedAt) {
       return;
     }
 
-    const timer = window.setInterval(() => setNow(Date.now()), 250);
+    const timer = window.setInterval(() => {
+      const currentNow = Date.now();
+      setNow(currentNow);
+
+      // Record WPM sample every 1 sec
+      const currentElapsed = Math.max((currentNow - startedAt) / 1000, 0.1);
+      const correctChars = countCorrectCharacters(inputRef.current, targetText);
+      const currentWpm = Math.round((correctChars / 5) / (currentElapsed / 60));
+      setWpmHistory((prev) => [...prev, currentWpm]);
+    }, 1000);
+
     return () => window.clearInterval(timer);
-  }, [completedAt, startedAt]);
+  }, [completedAt, startedAt, targetText]);
 
   const handleInputChange = useCallback(
     (nextValue: string) => {
@@ -125,13 +154,13 @@ export function useTypingGame() {
       inputRef.current = nextInput;
       setInput(nextInput);
     },
-    [startedAt, targetText, isComplete, isLoading],
+    [startedAt, targetText, isComplete, isLoading]
   );
 
   const typeCharacter = useCallback(
     (character: string) => {
       if (isComplete || isLoading) return;
-      if (soundEnabled) soundPlayer.playKeypress();
+      if (soundEnabled) soundPlayer.playKeypress(soundProfile);
       const currentInput = inputRef.current;
 
       if (currentInput.length >= targetText.length) {
@@ -156,12 +185,12 @@ export function useTypingGame() {
 
       setInput(nextInput);
     },
-    [startedAt, targetText, isComplete, isLoading, soundEnabled],
+    [startedAt, targetText, isComplete, isLoading, soundEnabled, soundProfile]
   );
 
   const deleteCharacter = useCallback(() => {
     if (isComplete || isLoading) return;
-    if (soundEnabled) soundPlayer.playKeypress();
+    if (soundEnabled) soundPlayer.playKeypress(soundProfile);
     const currentInput = inputRef.current;
 
     if (currentInput.length === 0) {
@@ -171,7 +200,7 @@ export function useTypingGame() {
     const nextInput = currentInput.slice(0, -1);
     inputRef.current = nextInput;
     setInput(nextInput);
-  }, [isComplete, isLoading, soundEnabled]);
+  }, [isComplete, isLoading, soundEnabled, soundProfile]);
 
   const metrics: TypingMetrics = useMemo(() => {
     const correctCharacters = countCorrectCharacters(input, targetText);
@@ -182,13 +211,10 @@ export function useTypingGame() {
     const elapsedMinutes = Math.max(elapsedSeconds / 60, MIN_ELAPSED_SECONDS_FOR_WPM / 60);
     const wpm = startedAt ? Math.round(correctCharacters / 5 / elapsedMinutes) : 0;
     const accuracy =
-      accuracyAttempts > 0
-        ? Math.round(((accuracyAttempts - mistakes) / accuracyAttempts) * 100)
-        : 100;
-    
-    // Progress calculation based on mode
+      accuracyAttempts > 0 ? Math.round(((accuracyAttempts - mistakes) / accuracyAttempts) * 100) : 100;
+
     let progress = 0;
-    if (mode.type === "words") {
+    if (mode.type === "words" || textType === "code" || textType === "quotes" || textType === "custom") {
       progress = targetText.length > 0 ? correctCharacters / targetText.length : 0;
     } else {
       progress = clamp(elapsedSeconds / mode.value, 0, 1);
@@ -223,7 +249,8 @@ export function useTypingGame() {
     startedAt,
     targetText,
     mode,
-    elapsedSeconds
+    textType,
+    elapsedSeconds,
   ]);
 
   const characterStatuses: CharacterStatus[] = useMemo(() => {
@@ -250,5 +277,6 @@ export function useTypingGame() {
     typeCharacter,
     deleteCharacter,
     reset,
+    wpmHistory,
   };
 }

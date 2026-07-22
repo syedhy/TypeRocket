@@ -24,7 +24,7 @@
   --progress-bg: rgb(255 255 255 / 0.72);
   color: var(--ink);
   background: var(--paper);
-  transition: color 1s ease, background-color 1s ease, border-color 1s ease;
+  transition: color 0.5s ease, background-color 0.5s ease, border-color 0.5s ease;
   font-family:
     "Chalkboard SE",
     "Comic Sans MS",
@@ -38,6 +38,96 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+body.theme-cyberpunk {
+  --ink: #00ffcc;
+  --muted-ink: rgba(0, 255, 204, 0.6);
+  --paper: #090d16;
+  --wrong: #ff0055;
+  --typing-correct: #00ffcc;
+  --typing-current: #00ffcc;
+  --typing-pending: rgba(0, 255, 204, 0.4);
+  --panel-bg: rgba(9, 13, 22, 0.9);
+  --panel-border: #00ffcc;
+  --report-bg: rgba(9, 13, 22, 0.95);
+  --rocket-panel-border: #00ffcc;
+  --rocket-panel-bg: rgba(9, 13, 22, 0.85);
+  --pill-bg: rgba(0, 255, 204, 0.15);
+  --pill-hover-bg: rgba(0, 255, 204, 0.3);
+  --pill-border: #00ffcc;
+}
+
+body.theme-dark-nebula {
+  --ink: #e9d5ff;
+  --muted-ink: rgba(233, 213, 255, 0.6);
+  --paper: #0f071b;
+  --wrong: #f43f5e;
+  --typing-correct: #e9d5ff;
+  --typing-current: #e9d5ff;
+  --typing-pending: rgba(233, 213, 255, 0.4);
+  --panel-bg: rgba(15, 7, 27, 0.9);
+  --panel-border: #a855f7;
+  --report-bg: rgba(15, 7, 27, 0.95);
+  --rocket-panel-border: #a855f7;
+  --rocket-panel-bg: rgba(15, 7, 27, 0.85);
+  --pill-bg: rgba(168, 85, 247, 0.2);
+  --pill-hover-bg: rgba(168, 85, 247, 0.35);
+  --pill-border: #a855f7;
+}
+
+body.theme-sunset {
+  --ink: #fff1f2;
+  --muted-ink: rgba(255, 241, 242, 0.6);
+  --paper: #1c0a1a;
+  --wrong: #fb7185;
+  --typing-correct: #fff1f2;
+  --typing-current: #fff1f2;
+  --typing-pending: rgba(255, 241, 242, 0.4);
+  --panel-bg: rgba(28, 10, 26, 0.9);
+  --panel-border: #f43f5e;
+  --report-bg: rgba(28, 10, 26, 0.95);
+  --rocket-panel-border: #f43f5e;
+  --rocket-panel-bg: rgba(28, 10, 26, 0.85);
+  --pill-bg: rgba(244, 63, 94, 0.2);
+  --pill-hover-bg: rgba(244, 63, 94, 0.35);
+  --pill-border: #f43f5e;
+}
+
+body.theme-nord {
+  --ink: #eceff4;
+  --muted-ink: rgba(236, 239, 244, 0.6);
+  --paper: #2e3440;
+  --wrong: #bf616a;
+  --typing-correct: #88c0d0;
+  --typing-current: #88c0d0;
+  --typing-pending: rgba(236, 239, 244, 0.4);
+  --panel-bg: rgba(46, 52, 64, 0.9);
+  --panel-border: #88c0d0;
+  --report-bg: rgba(46, 52, 64, 0.95);
+  --rocket-panel-border: #88c0d0;
+  --rocket-panel-bg: rgba(46, 52, 64, 0.85);
+  --pill-bg: rgba(136, 192, 208, 0.2);
+  --pill-hover-bg: rgba(136, 192, 208, 0.35);
+  --pill-border: #88c0d0;
+}
+
+body.theme-dracula {
+  --ink: #f8f8f2;
+  --muted-ink: rgba(248, 248, 242, 0.6);
+  --paper: #282a36;
+  --wrong: #ff5555;
+  --typing-correct: #50fa7b;
+  --typing-current: #50fa7b;
+  --typing-pending: rgba(248, 248, 242, 0.4);
+  --panel-bg: rgba(40, 42, 54, 0.9);
+  --panel-border: #ff79c6;
+  --report-bg: rgba(40, 42, 54, 0.95);
+  --rocket-panel-border: #ff79c6;
+  --rocket-panel-bg: rgba(40, 42, 54, 0.85);
+  --pill-bg: rgba(255, 121, 198, 0.2);
+  --pill-hover-bg: rgba(255, 121, 198, 0.35);
+  --pill-border: #ff79c6;
 }
 
 * {

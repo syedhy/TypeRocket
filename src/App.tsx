@@ -1,4 +1,4 @@
-import { type KeyboardEvent, useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import { ALTITUDE_MOTION_CONFIG, GRID_VISUAL_CONFIG } from "./altitude/altitudeWorld";
@@ -13,7 +13,11 @@ import { TypingText } from "./components/TypingText";
 import { CardBody, CardContainer, CardItem } from "./components/ui/3d-card";
 import { HUD } from "./components/HUD";
 import { CommandPalette } from "./components/CommandPalette";
+import { MonkeyBar } from "./components/MonkeyBar";
+import { CustomTextModal } from "./components/CustomTextModal";
+import { WpmChart } from "./components/WpmChart";
 import { useGameSettings } from "./contexts/GameSettingsContext";
+import { Code, Settings, RotateCcw } from "lucide-react";
 
 gsap.registerPlugin(useGSAP);
 
@@ -49,7 +53,7 @@ function getProjectedStopAltitudeKilometers(
     progress: number;
     wpm: number;
   },
-  recentWpm: number,
+  recentWpm: number
 ) {
   const accuracyMultiplier = Math.min(Math.max(metrics.accuracy / 100, 0), 1);
   const completionMultiplier = Math.min(Math.max(metrics.progress, 0), 1);
@@ -57,9 +61,9 @@ function getProjectedStopAltitudeKilometers(
     Math.max(
       (recentWpm - ALTITUDE_MOTION_CONFIG.minimumRecentWpm) /
         ALTITUDE_MOTION_CONFIG.speedWpmRange,
-      0,
+      0
     ),
-    1,
+    1
   );
   const estimatedVelocity =
     recentWpm >= ALTITUDE_MOTION_CONFIG.minimumRecentWpm
@@ -71,7 +75,7 @@ function getProjectedStopAltitudeKilometers(
   const effectiveVelocity = Math.max(velocityPxPerSecond, estimatedVelocity);
   const normalizedVelocity = Math.min(
     Math.max(effectiveVelocity / GRID_VISUAL_CONFIG.maximumSpeedPxPerSecond, 0),
-    1,
+    1
   );
   const coastPixels =
     (effectiveVelocity * effectiveVelocity) /
@@ -87,7 +91,7 @@ function getProjectedStopAltitudeKilometers(
 }
 
 function App() {
-  const { isSettingsModalOpen, setSettingsModalOpen } = useGameSettings();
+  const { isSettingsModalOpen, setSettingsModalOpen, textType, codeLanguage } = useGameSettings();
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const resultsRef = useRef<HTMLElement>(null);
   const flightStateRef = useRef<FlightState>({
@@ -108,7 +112,9 @@ function App() {
     typeCharacter,
     deleteCharacter,
     reset,
+    wpmHistory,
   } = useTypingGame();
+
   const recentSpeed = useRecentTypingSpeed(input, targetText);
   const flightProgress = Math.min(flightAltitudeKilometers / MAX_ALTITUDE_KM, 1);
   const displayAltitudeKilometers = Math.round(flightAltitudeKilometers);
@@ -120,9 +126,9 @@ function App() {
     Math.max(
       (recentSpeed.recentWpm - ALTITUDE_MOTION_CONFIG.minimumRecentWpm) /
         ALTITUDE_MOTION_CONFIG.speedWpmRange,
-      0,
+      0
     ),
-    1,
+    1
   );
 
   useGSAP(() => {
@@ -168,10 +174,10 @@ function App() {
     const projectedAltitude = getProjectedStopAltitudeKilometers(
       flightStateRef.current,
       metrics,
-      recentSpeed.recentWpm,
+      recentSpeed.recentWpm
     );
     const finalAltitudeKilometers = Math.round(
-      Math.max(projectedAltitude, metrics.altitudeKilometers),
+      Math.max(projectedAltitude, metrics.altitudeKilometers)
     );
     const finalFlightProgress = Math.min(finalAltitudeKilometers / MAX_ALTITUDE_KM, 1);
 
@@ -200,18 +206,6 @@ function App() {
     reset();
     window.requestAnimationFrame(() => inputRef.current?.focus());
   };
-
-  useEffect(() => {
-    const down = (e: globalThis.KeyboardEvent) => {
-      if (e.key === "Escape") {
-        e.preventDefault();
-        setSettingsModalOpen(!isSettingsModalOpen);
-      }
-    };
-
-    document.addEventListener("keydown", down);
-    return () => document.removeEventListener("keydown", down);
-  }, [isSettingsModalOpen, setSettingsModalOpen]);
 
   const handleTypingKeyDown = (event: React.KeyboardEvent<HTMLElement>) => {
     if (event.metaKey || event.ctrlKey || event.altKey) {
@@ -260,6 +254,8 @@ function App() {
     >
       <div className="atmosphere-wash fixed inset-0 z-[1]" />
       <CommandPalette />
+      <CustomTextModal />
+
       <SkyMotion
         altitudeKilometers={metrics.altitudeKilometers}
         isPaused={resultSnapshot !== null}
@@ -283,7 +279,6 @@ function App() {
 
       {metrics.isComplete ? (
         <section ref={resultsRef} className="results-page fixed inset-0 z-40 overflow-y-auto px-4 py-4 sm:px-6 md:px-10">
-
           <div className="results-topbar mx-auto flex w-full max-w-7xl items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <img className="brand-rocket" src={ROCKET_ASSETS.calm} alt="" aria-hidden="true" />
@@ -294,7 +289,8 @@ function App() {
                 <h1 className="doodle-font text-2xl font-black tracking-tight">TypeRocket</h1>
               </div>
             </div>
-            <button className="doodle-pill rounded-full px-5 py-2 text-sm font-black" onClick={restart} type="button">
+            <button className="doodle-pill flex items-center gap-2 rounded-full px-5 py-2 text-sm font-black" onClick={restart} type="button">
+              <RotateCcw className="h-4 w-4" />
               restart
             </button>
           </div>
@@ -361,6 +357,11 @@ function App() {
                   })}
                 </div>
 
+                {/* SVG Live WPM Chart */}
+                <CardItem translateZ={28} className="mt-5">
+                  <WpmChart history={wpmHistory} wpm={resultSnapshot?.wpm ?? metrics.wpm} accuracy={resultSnapshot?.accuracy ?? metrics.accuracy} />
+                </CardItem>
+
                 <div className="mt-4 grid gap-3 sm:grid-cols-3">
                   <CardItem className="result-mini" translateZ={12}>
                     <p>Time</p>
@@ -377,7 +378,7 @@ function App() {
                 </div>
 
                 <CardItem translateZ={24}>
-                  <button className="doodle-pill mt-5 rounded-full px-8 py-3 font-black" onClick={restart} type="button">
+                  <button className="doodle-pill mt-5 w-full rounded-full px-8 py-3 font-black" onClick={restart} type="button">
                     press enter or restart
                   </button>
                 </CardItem>
@@ -388,8 +389,8 @@ function App() {
       ) : (
         <>
           <HUD metrics={metrics} isStarted={metrics.typedProgress > 0} isComplete={metrics.isComplete} />
-          
-          <nav className="site-nav relative z-50 flex items-center justify-between px-4 py-4 sm:px-6 md:px-12 md:py-6">
+
+          <nav className="site-nav relative z-50 flex items-center justify-between px-4 py-3 sm:px-6 md:px-12 md:py-4">
             <div className="flex items-center gap-3">
               <img className="brand-rocket" src={ROCKET_ASSETS.calm} alt="" aria-hidden="true" />
               <div>
@@ -400,22 +401,45 @@ function App() {
               </div>
             </div>
 
-            <div aria-hidden="true" />
+            {textType === "code" && (
+              <div className="hidden sm:flex items-center gap-2 rounded-full border-2 border-[var(--ink)] bg-[var(--pill-bg)] px-3 py-1 text-xs font-black text-[var(--ink)]">
+                <Code className="h-4 w-4" />
+                <span className="uppercase">{codeLanguage}</span>
+              </div>
+            )}
 
-            <button
-              className="doodle-pill inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-black"
-              onClick={(event) => {
-                event.stopPropagation();
-                restart();
-              }}
-              type="button"
-            >
-              <span aria-hidden="true">↻</span>
-              restart
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                className="doodle-pill inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-black"
+                onClick={() => setSettingsModalOpen(true)}
+                type="button"
+                title="Settings (ESC)"
+              >
+                <Settings className="h-4 w-4" />
+                <span className="hidden sm:inline">Settings</span>
+              </button>
+
+              <button
+                className="doodle-pill inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-black"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  restart();
+                }}
+                type="button"
+              >
+                <RotateCcw className="h-4 w-4" />
+                restart
+              </button>
+            </div>
           </nav>
-          <section className="home-rocket-shell pointer-events-none absolute inset-x-0 top-[13vh] z-20 flex justify-center">
-            <div className="rocket-stage relative h-[52vh] w-full max-w-6xl">
+
+          {/* MonkeyBar Quick Selector */}
+          <div className="pt-2">
+            <MonkeyBar />
+          </div>
+
+          <section className="home-rocket-shell pointer-events-none absolute inset-x-0 top-[18vh] z-20 flex justify-center">
+            <div className="rocket-stage relative h-[48vh] w-full max-w-6xl">
               <Rocket
                 progress={flightProgress}
                 intensity={motionIntensity}
@@ -426,7 +450,7 @@ function App() {
             </div>
           </section>
 
-          <section className="typing-panel relative z-30 flex h-[calc(100dvh-88px)] flex-col justify-end px-4 pb-[12vh] sm:px-6 md:px-12">
+          <section className="typing-panel relative z-30 flex h-[calc(100dvh-150px)] flex-col justify-end px-4 pb-[8vh] sm:px-6 md:px-12">
             <div className="mx-auto w-full max-w-[1120px]">
               <div className={`hud-row mb-4 flex flex-wrap items-center justify-center gap-3 text-xs sm:gap-6 sm:text-sm transition-opacity ${metrics.typedProgress > 0 ? "opacity-0" : "opacity-100"}`}>
                 <span className="inline-flex items-center gap-2">
@@ -459,4 +483,3 @@ function App() {
 }
 
 export default App;
-
