@@ -429,14 +429,14 @@ function App() {
             </div>
           </nav>
 
-          {/* MonkeyBar Mode Selector Container: Fades out only while actively typing */}
-          <div className={`transition-all duration-300 ease-out pt-2 ${isTyping ? "opacity-0 pointer-events-none -translate-y-4" : "opacity-100 translate-y-0"}`}>
+          {/* MonkeyBar Mode Selector Container: Prominent on home screen, fades out when typing */}
+          <div className={`transition-all duration-300 ease-out pt-1 px-4 relative z-40 ${isTyping ? "opacity-0 pointer-events-none -translate-y-3" : "opacity-100 translate-y-0"}`}>
             <MonkeyBar />
           </div>
 
-          {/* Rocket Stage Container - Perfectly Positioned Upper-Mid Area */}
-          <section className="home-rocket-shell pointer-events-none absolute inset-x-0 top-[16vh] z-20 flex justify-center">
-            <div className="rocket-stage relative h-[44vh] w-full max-w-5xl">
+          {/* Rocket Stage Container - Perfectly Positioned */}
+          <section className="home-rocket-shell pointer-events-none absolute inset-x-0 top-[20vh] z-20 flex justify-center">
+            <div className="rocket-stage relative h-[42vh] w-full max-w-5xl">
               <Rocket
                 progress={flightProgress}
                 intensity={motionIntensity}
@@ -447,8 +447,8 @@ function App() {
             </div>
           </section>
 
-          {/* Typing Panel - Elevated with Generous Bottom Spacing & Big Font */}
-          <section className="typing-panel relative z-30 flex h-[calc(100dvh-130px)] flex-col justify-end px-4 pb-[13vh] sm:px-6 md:px-12 md:pb-[15vh]">
+          {/* Typing Panel - Elevated with Generous Bottom Spacing */}
+          <section className="typing-panel relative z-30 flex h-[calc(100dvh-140px)] flex-col justify-end px-4 pb-[11vh] sm:px-6 md:px-12 md:pb-[14vh]">
             <div className="mx-auto w-full max-w-[1120px]">
               <div className={`hud-row mb-4 flex flex-wrap items-center justify-center gap-3 text-xs sm:gap-6 sm:text-sm transition-opacity ${isTyping ? "opacity-0" : "opacity-100"}`}>
                 <span className="inline-flex items-center gap-2">

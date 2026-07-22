@@ -59,104 +59,104 @@ export function MonkeyBar() {
   ];
 
   return (
-    <div className="relative z-40 mx-auto mb-6 flex w-full max-w-4xl flex-wrap items-center justify-center gap-2 rounded-2xl border-2 border-[var(--ink)] bg-[var(--panel-bg)] p-2 shadow-lg backdrop-blur-md transition-all sm:gap-3 sm:px-4 sm:py-2.5 doodle-font text-sm font-bold text-[var(--ink)]">
-      {/* Punctuation & Numbers Toggles */}
-      <div className="flex items-center gap-1 border-r-2 border-[var(--ink)] pr-2 sm:gap-2 sm:pr-3">
+    <div className="relative z-40 mx-auto flex w-full max-w-4xl flex-wrap items-center justify-center gap-3 p-1 doodle-font text-xs font-bold text-[var(--ink)] sm:text-sm">
+      {/* Group 1: Modifiers (Punctuation & Numbers) */}
+      <div className="flex items-center gap-1 rounded-2xl border-2 border-[var(--ink)] bg-[var(--panel-bg)] p-1.5 shadow-md backdrop-blur-md">
         <button
           type="button"
           onClick={() => setIncludePunctuation(!includePunctuation)}
-          className={`flex items-center gap-1 rounded-xl px-2.5 py-1 transition-all ${
+          className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 transition-all ${
             includePunctuation
-              ? "bg-[var(--ink)] text-[var(--paper)] font-black"
+              ? "bg-[var(--ink)] text-[var(--paper)] font-black shadow-sm"
               : "text-[var(--muted-ink)] hover:text-[var(--ink)]"
           }`}
           title="Toggle Punctuation"
         >
-          <AtSign className="h-4 w-4" />
+          <AtSign className="h-3.5 w-3.5" />
           <span>punctuation</span>
         </button>
 
         <button
           type="button"
           onClick={() => setIncludeNumbers(!includeNumbers)}
-          className={`flex items-center gap-1 rounded-xl px-2.5 py-1 transition-all ${
+          className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 transition-all ${
             includeNumbers
-              ? "bg-[var(--ink)] text-[var(--paper)] font-black"
+              ? "bg-[var(--ink)] text-[var(--paper)] font-black shadow-sm"
               : "text-[var(--muted-ink)] hover:text-[var(--ink)]"
           }`}
           title="Toggle Numbers"
         >
-          <Hash className="h-4 w-4" />
+          <Hash className="h-3.5 w-3.5" />
           <span>numbers</span>
         </button>
       </div>
 
-      {/* Main Mode Selectors */}
-      <div className="flex items-center gap-1 sm:gap-2">
+      {/* Group 2: Mode Selectors (Time, Words, Quote, Code, Custom) */}
+      <div className="flex items-center gap-1 rounded-2xl border-2 border-[var(--ink)] bg-[var(--panel-bg)] p-1.5 shadow-md backdrop-blur-md">
         <button
           type="button"
           onClick={() => handleModeChange("time")}
-          className={`flex items-center gap-1.5 rounded-xl px-3 py-1 transition-all ${
+          className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 transition-all ${
             isModeActive("time")
-              ? "bg-[var(--ink)] text-[var(--paper)] font-black"
+              ? "bg-[var(--ink)] text-[var(--paper)] font-black shadow-sm"
               : "text-[var(--muted-ink)] hover:text-[var(--ink)]"
           }`}
         >
-          <Clock className="h-4 w-4" />
+          <Clock className="h-3.5 w-3.5" />
           <span>time</span>
         </button>
 
         <button
           type="button"
           onClick={() => handleModeChange("words")}
-          className={`flex items-center gap-1.5 rounded-xl px-3 py-1 transition-all ${
+          className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 transition-all ${
             isModeActive("words")
-              ? "bg-[var(--ink)] text-[var(--paper)] font-black"
+              ? "bg-[var(--ink)] text-[var(--paper)] font-black shadow-sm"
               : "text-[var(--muted-ink)] hover:text-[var(--ink)]"
           }`}
         >
-          <Type className="h-4 w-4" />
+          <Type className="h-3.5 w-3.5" />
           <span>words</span>
         </button>
 
         <button
           type="button"
           onClick={() => handleModeChange("quote")}
-          className={`flex items-center gap-1.5 rounded-xl px-3 py-1 transition-all ${
+          className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 transition-all ${
             isModeActive("quote")
-              ? "bg-[var(--ink)] text-[var(--paper)] font-black"
+              ? "bg-[var(--ink)] text-[var(--paper)] font-black shadow-sm"
               : "text-[var(--muted-ink)] hover:text-[var(--ink)]"
           }`}
         >
-          <Quote className="h-4 w-4" />
+          <Quote className="h-3.5 w-3.5" />
           <span>quote</span>
         </button>
 
         <button
           type="button"
           onClick={() => handleModeChange("code")}
-          className={`flex items-center gap-1.5 rounded-xl px-3 py-1 transition-all ${
+          className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 transition-all ${
             isModeActive("code")
-              ? "bg-[var(--ink)] text-[var(--paper)] font-black"
+              ? "bg-[var(--ink)] text-[var(--paper)] font-black shadow-sm"
               : "text-[var(--muted-ink)] hover:text-[var(--ink)]"
           }`}
         >
-          <Code className="h-4 w-4" />
+          <Code className="h-3.5 w-3.5" />
           <span>code</span>
         </button>
 
         <button
           type="button"
           onClick={() => setCustomTextModalOpen(true)}
-          className="flex items-center gap-1.5 rounded-xl px-3 py-1 text-[var(--muted-ink)] hover:text-[var(--ink)] transition-all"
+          className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-[var(--muted-ink)] hover:text-[var(--ink)] transition-all"
         >
-          <Edit3 className="h-4 w-4" />
+          <Edit3 className="h-3.5 w-3.5" />
           <span>custom</span>
         </button>
       </div>
 
-      {/* Sub-options for Time / Words / Code */}
-      <div className="flex items-center gap-1 border-l-2 border-[var(--ink)] pl-2 sm:gap-2 sm:pl-3">
+      {/* Group 3: Sub-options (Durations / Word Counts / Language / Settings) */}
+      <div className="flex items-center gap-1 rounded-2xl border-2 border-[var(--ink)] bg-[var(--panel-bg)] p-1.5 shadow-md backdrop-blur-md">
         {mode.type === "time" && textType === "words" && (
           <>
             {[15, 30, 60, 120].map((sec) => (
@@ -164,13 +164,13 @@ export function MonkeyBar() {
                 key={sec}
                 type="button"
                 onClick={() => setMode({ type: "time", value: sec })}
-                className={`rounded-lg px-2 py-0.5 transition-all ${
+                className={`rounded-xl px-3 py-1 transition-all ${
                   mode.value === sec
-                    ? "bg-[var(--ink)] text-[var(--paper)] font-black"
+                    ? "bg-[var(--ink)] text-[var(--paper)] font-black shadow-sm"
                     : "text-[var(--muted-ink)] hover:text-[var(--ink)]"
                 }`}
               >
-                {sec}s
+                {sec}
               </button>
             ))}
           </>
@@ -183,9 +183,9 @@ export function MonkeyBar() {
                 key={wCount}
                 type="button"
                 onClick={() => setMode({ type: "words", value: wCount })}
-                className={`rounded-lg px-2 py-0.5 transition-all ${
+                className={`rounded-xl px-3 py-1 transition-all ${
                   mode.value === wCount
-                    ? "bg-[var(--ink)] text-[var(--paper)] font-black"
+                    ? "bg-[var(--ink)] text-[var(--paper)] font-black shadow-sm"
                     : "text-[var(--muted-ink)] hover:text-[var(--ink)]"
                 }`}
               >
@@ -199,7 +199,7 @@ export function MonkeyBar() {
           <select
             value={codeLanguage}
             onChange={(e) => setCodeLanguage(e.target.value as CodeLanguage)}
-            className="rounded-xl border-2 border-[var(--ink)] bg-[var(--paper)] px-2 py-0.5 text-xs font-black text-[var(--ink)] outline-none cursor-pointer"
+            className="rounded-xl border-2 border-[var(--ink)] bg-[var(--paper)] px-3 py-1 text-xs font-black text-[var(--ink)] outline-none cursor-pointer"
           >
             {LANGUAGES.map((lang) => (
               <option key={lang.id} value={lang.id}>
@@ -209,11 +209,11 @@ export function MonkeyBar() {
           </select>
         )}
 
-        {/* Quick Settings Icon */}
+        {/* Settings Icon */}
         <button
           type="button"
           onClick={() => setSettingsModalOpen(true)}
-          className="ml-2 rounded-xl p-1.5 text-[var(--ink)] hover:bg-[var(--pill-hover-bg)] transition-colors"
+          className="rounded-xl p-1.5 text-[var(--ink)] hover:bg-[var(--pill-hover-bg)] transition-colors ml-1"
           title="Open Settings (ESC)"
         >
           <Settings className="h-4 w-4" />
