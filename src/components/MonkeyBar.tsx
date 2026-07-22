@@ -34,7 +34,7 @@ export function MonkeyBar() {
       setTextType("code");
     } else if (newModeType === "custom") {
       setMode({ type: "words", value: 30 });
-      setTextType("words");
+      setTextType("custom");
       setCustomTextModalOpen(true);
     }
   };
@@ -42,7 +42,7 @@ export function MonkeyBar() {
   const isModeActive = (m: GameModeType) => {
     if (m === "quote") return textType === "quotes";
     if (m === "code") return textType === "code";
-    if (m === "custom") return false;
+    if (m === "custom") return textType === "custom";
     return mode.type === m && textType === "words";
   };
 
@@ -147,8 +147,12 @@ export function MonkeyBar() {
 
         <button
           type="button"
-          onClick={() => setCustomTextModalOpen(true)}
-          className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-[var(--muted-ink)] hover:text-[var(--ink)] transition-all"
+          onClick={() => handleModeChange("custom")}
+          className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 transition-all ${
+            isModeActive("custom")
+              ? "bg-[var(--ink)] text-[var(--paper)] font-black shadow-sm"
+              : "text-[var(--muted-ink)] hover:text-[var(--ink)]"
+          }`}
         >
           <Edit3 className="h-3.5 w-3.5" />
           <span>custom</span>

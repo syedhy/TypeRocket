@@ -121,7 +121,7 @@ export function TypingText({ targetText, statuses, cursorIndex }: TypingTextProp
                 } else if (status === "incorrect") {
                   statusClass = blindMode
                     ? "text-[var(--typing-correct)] font-black"
-                    : "text-[var(--wrong)] underline decoration-wavy font-black";
+                    : "text-[var(--wrong)] font-black";
                 }
 
                 return (
