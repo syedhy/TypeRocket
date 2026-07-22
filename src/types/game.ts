@@ -27,4 +27,6 @@ export type TypingMetrics = {
   altitudeKilometers: number;
   atmosphereLevelReached: string;
   isComplete: boolean;
+  remainingLabel: string;
+  remainingValue: string;
 };

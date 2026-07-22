@@ -451,16 +451,15 @@ function App() {
           <section className="typing-panel relative z-30 flex h-[calc(100dvh-140px)] flex-col justify-end px-4 pb-[11vh] sm:px-6 md:px-12 md:pb-[14vh]">
             <div className="mx-auto w-full max-w-[1120px]">
               <div className={`hud-row mb-4 flex flex-wrap items-center justify-center gap-3 text-xs sm:gap-6 sm:text-sm transition-opacity ${isTyping ? "opacity-0" : "opacity-100"}`}>
+                <span className="inline-flex items-center gap-2 font-black">
+                  <span aria-hidden="true">🎯</span>
+                  {metrics.remainingValue} {metrics.remainingLabel.toLowerCase()}
+                </span>
                 <span className="inline-flex items-center gap-2">
                   <span aria-hidden="true">↯</span>
                   {Math.round(motionIntensity * 100)}% thrust
                 </span>
-                <span className="inline-flex items-center gap-2">
-                  <span aria-hidden="true">◷</span>
-                  {formatTime(metrics.elapsedSeconds)}
-                </span>
                 <span>{metrics.wpm} wpm</span>
-                <span>{recentSpeed.recentWpm} recent</span>
                 <span>{metrics.accuracy}% acc</span>
                 <span>{displayAltitudeKilometers} km altitude</span>
               </div>

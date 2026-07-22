@@ -250,6 +250,33 @@ export function useTypingGame() {
     const altitudeProgress = clamp(altitudeKilometers / MAX_ALTITUDE_KM, 0, 1);
     const atmosphereLevelReached = getAtmosphereLayer(altitudeProgress).name;
 
+    let remainingLabel = "TIME LEFT";
+    let remainingValue = "0s";
+
+    if (mode.type === "time" && textType === "words") {
+      const secondsLeft = Math.max(Math.ceil(mode.value - elapsedSeconds), 0);
+      remainingLabel = "TIME LEFT";
+      remainingValue = `${secondsLeft}s`;
+    } else if (mode.type === "words" && textType === "words") {
+      const totalWords = mode.value;
+      const typedWordCount = input.trim().length > 0 ? input.trim().split(/\s+/).length : 0;
+      const wordsLeft = Math.max(totalWords - typedWordCount, 0);
+      remainingLabel = "WORDS LEFT";
+      remainingValue = `${wordsLeft} / ${totalWords}`;
+    } else if (textType === "code") {
+      const totalLines = targetText.split("\n").length;
+      const typedLines = input.split("\n").length;
+      const linesLeft = Math.max(totalLines - typedLines, 0);
+      remainingLabel = "LINES LEFT";
+      remainingValue = `${linesLeft} / ${totalLines}`;
+    } else {
+      const totalWords = targetText.trim().length > 0 ? targetText.trim().split(/\s+/).length : 0;
+      const typedWordCount = input.trim().length > 0 ? input.trim().split(/\s+/).length : 0;
+      const wordsLeft = Math.max(totalWords - typedWordCount, 0);
+      remainingLabel = "WORDS LEFT";
+      remainingValue = `${wordsLeft} left`;
+    }
+
     return {
       elapsedSeconds,
       correctCharacters,
@@ -263,6 +290,8 @@ export function useTypingGame() {
       altitudeKilometers,
       atmosphereLevelReached,
       isComplete,
+      remainingLabel,
+      remainingValue,
     };
   }, [
     completedAt,
